@@ -1,2 +1,13 @@
 *.smx
 .vscode/*
+addons/sourcemod/scripting/GlobalAPI-Logging-Flatfile.sp
+addons/sourcemod/scripting/GlobalAPI-Retrying-Binary.sp
+addons/sourcemod/scripting/GlobalAPI.sp
+addons/sourcemod/scripting/GlobalAPI/api/convars.sp
+addons/sourcemod/scripting/GlobalAPI/api/forwards.sp
+addons/sourcemod/scripting/GlobalAPI/api/natives.sp
+addons/sourcemod/scripting/GlobalAPI/commands.sp
+addons/sourcemod/scripting/GlobalAPI/http/forwards.sp
+addons/sourcemod/scripting/GlobalAPI/http/get.sp
+addons/sourcemod/scripting/GlobalAPI/http/post.sp
+addons/sourcemod/scripting/GlobalAPI/misc.sp
