@@ -7,6 +7,7 @@
 #include <movementapi>
 
 #include <gokz/core>
+#include <gokz/global>
 #include <gokz/localranks>
 #include <gokz/replays>
 
@@ -15,6 +16,7 @@
 #include <gokz/hud>
 #include <gokz/jumpstats>
 #include <gokz/localdb>
+#include <ripext>
 #include <updater>
 
 #pragma newdecls required
@@ -50,6 +52,7 @@ ArrayList g_ReplayInfoCache;
 #include "gokz-replays/replay_menu.sp"
 #include "gokz-replays/api.sp"
 #include "gokz-replays/controls.sp"
+#include "gokz-replays/global.sp"
 
 
 
@@ -112,6 +115,7 @@ public void OnMapStart()
 	OnMapStart_Nav();
 	OnMapStart_Recording();
 	OnMapStart_ReplayCache();
+	OnMapStart_GlobalReplay();
 }
 
 public void OnConfigsExecuted()
@@ -266,6 +270,10 @@ public void GOKZ_DB_OnJumpstatPB(int client, int jumptype, int mode, float dista
 	GOKZ_DB_OnJumpstatPB_Recording(client, jumptype, distance, block, strafes, sync, pre, max, airtime);
 }
 
+public void GOKZ_GL_OnNewTopTime(int client, int course, int mode, int timeType, int rank, int rankOverall, float runTime)
+{
+	GOKZ_GL_OnNewTopTime_Recording(course, mode, timeType, runTime);
+}
 
 
 // =====[ PRIVATE ]=====

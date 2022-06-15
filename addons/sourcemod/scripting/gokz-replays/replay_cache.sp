@@ -7,7 +7,7 @@
 // =====[ PUBLIC ]=====
 
 // Adds a replay to the cache
-void AddToReplayInfoCache(int course, int mode, int style, int timeType)
+void AddToReplayInfoCache(int course, int mode, int style, int timeType, int global = 0)
 {
 	int index = g_ReplayInfoCache.Length;
 	g_ReplayInfoCache.Resize(index + 1);
@@ -15,6 +15,7 @@ void AddToReplayInfoCache(int course, int mode, int style, int timeType)
 	g_ReplayInfoCache.Set(index, mode, 1);
 	g_ReplayInfoCache.Set(index, style, 2);
 	g_ReplayInfoCache.Set(index, timeType, 3);
+	g_ReplayInfoCache.Set(index, global, 4);
 }
 
 // Use this to sort the cache after finished adding to it
@@ -85,47 +86,35 @@ void OnMapStart_ReplayCache()
 	DirectoryListing dir = OpenDirectory(path);
 	
 	// We want to find files that look like "0_KZT_NRM_PRO.rec"
-	char file[PLATFORM_MAX_PATH], pieces[4][16];
-	int length, dotpos, course, mode, style, timeType;
+	char file[PLATFORM_MAX_PATH];
+	int course, mode, style, timeType;
 	
 	while (dir.GetNext(file, sizeof(file)))
 	{
-		// Some credit to Influx Timer - https://github.com/TotallyMehis/Influx-Timer
-		
-		// Check file extension
-		length = strlen(file);
-		dotpos = 0;
-		for (int i = 0; i < length; i++)
+		if (StrContains(file, "rec"))
 		{
-			if (file[i] == '.')
-			{
-				dotpos = i;
-			}
+			file[FindCharInString(file, '.', true)] = '\0';
 		}
-		if (!StrEqual(file[dotpos + 1], RP_FILE_EXTENSION, false))
+
+		if (strlen(file) <= 1)
 		{
 			continue;
 		}
-		
-		// Remove file extension
-		Format(file, dotpos + 1, file);
-		
+
 		// Break down file name into pieces
-		if (ExplodeString(file, "_", pieces, sizeof(pieces), sizeof(pieces[])) != sizeof(pieces))
-		{
-			continue;
-		}
-		
+		char pieces[5][16];
+		ExplodeString(file, "_", pieces, sizeof(pieces), sizeof(pieces[]));
+
 		// Extract info from the pieces
 		course = StringToInt(pieces[0]);
 		mode = GetModeIDFromString(pieces[1]);
 		style = GetStyleIDFromString(pieces[2]);
 		timeType = GetTimeTypeIDFromString(pieces[3]);
-		if (!GOKZ_IsValidCourse(course) || mode == -1 || style == -1 || timeType == -1)
+		if (!GOKZ_IsValidCourse(course) || mode == -1 || style == -1 || timeType == -1 || StrEqual(pieces[4], "GB"))
 		{
 			continue;
 		}
-		
+
 		// Add it to the cache
 		AddToReplayInfoCache(course, mode, style, timeType);
 	}

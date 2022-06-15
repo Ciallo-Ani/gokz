@@ -288,6 +288,12 @@ enum struct Jump
 	float strafes_loss[JS_MAX_TRACKED_STRAFES];
 	float strafes_sync[JS_MAX_TRACKED_STRAFES];
 	float strafes_width[JS_MAX_TRACKED_STRAFES];
+
+	//# osc add in 202107271300 增加一个steamid字段
+	char steamid[64];
+
+	//# osc add in 202107271300 增加一个跳跃记录事件
+	int recordTime;
 }
 
 

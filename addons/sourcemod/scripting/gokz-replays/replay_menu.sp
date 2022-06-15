@@ -5,12 +5,13 @@
 
 
 static int selectedReplayMode[MAXPLAYERS + 1];
+static bool selectedGlobalReplay[MAXPLAYERS + 1];
 
 
 
 // =====[ PUBLIC ]=====
 
-void DisplayReplayModeMenu(int client)
+void DisplayReplayNetworkMenu(int client)
 {
 	if (g_ReplayInfoCache.Length == 0)
 	{
@@ -18,10 +19,19 @@ void DisplayReplayModeMenu(int client)
 		GOKZ_PlayErrorSound(client);
 		return;
 	}
-	
+
+	Menu menu = new Menu(MenuHandler_ReplayNetwork);
+	menu.AddItem("global", "全球记录");
+	menu.AddItem("local", "本地记录");
+	menu.Display(client, MENU_TIME_FOREVER);
+}
+
+void DisplayReplayModeMenu(int client)
+{
 	Menu menu = new Menu(MenuHandler_ReplayMode);
 	menu.SetTitle("%T", "Replay Menu (Mode) - Title", client, gC_CurrentMap);
 	GOKZ_MenuAddModeItems(client, menu, false);
+	menu.ExitBackButton = true;
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
@@ -29,12 +39,37 @@ void DisplayReplayModeMenu(int client)
 
 // =====[ EVENTS ]=====
 
+public int MenuHandler_ReplayNetwork(Menu menu, MenuAction action, int param1, int param2)
+{
+	if (action == MenuAction_Select)
+	{
+		char sInfo[8];
+		menu.GetItem(param2, sInfo, sizeof(sInfo));
+		selectedGlobalReplay[param1] = StrEqual(sInfo, "global");
+
+		DisplayReplayModeMenu(param1);
+	}
+	else if (action == MenuAction_End)
+	{
+		delete menu;
+	}
+
+	return 0;
+}
+
 public int MenuHandler_ReplayMode(Menu menu, MenuAction action, int param1, int param2)
 {
 	if (action == MenuAction_Select)
 	{
 		selectedReplayMode[param1] = param2;
 		DisplayReplayMenu(param1);
+	}
+	else if (action == MenuAction_Cancel)
+	{
+		if (param2 == MenuCancel_ExitBack)
+		{
+			DisplayReplayNetworkMenu(param1);
+		}
 	}
 	else if (action == MenuAction_End)
 	{
@@ -54,10 +89,11 @@ public int MenuHandler_Replay(Menu menu, MenuAction action, int param1, int para
 
 		char path[PLATFORM_MAX_PATH];
 		BuildPath(Path_SM, path, sizeof(path),
-			"%s/%s/%d_%s_%s_%s.%s",
-			RP_DIRECTORY_RUNS, gC_CurrentMap, replayInfo[0], gC_ModeNamesShort[replayInfo[1]], gC_StyleNamesShort[replayInfo[2]], gC_TimeTypeNames[replayInfo[3]], RP_FILE_EXTENSION);
+			"%s/%s/%d_%s_%s_%s%s.%s",
+			RP_DIRECTORY_RUNS, gC_CurrentMap, replayInfo[0], gC_ModeNamesShort[replayInfo[1]], gC_StyleNamesShort[replayInfo[2]], gC_TimeTypeNames[replayInfo[3]], selectedGlobalReplay[param1] ? "_GB" : "", RP_FILE_EXTENSION);
 		if (!FileExists(path))
 		{
+			// old replay path, ignore
 			BuildPath(Path_SM, path, sizeof(path),
 				"%s/%d_%s_%s_%s.%s",
 				RP_DIRECTORY, gC_CurrentMap, replayInfo[0], gC_ModeNamesShort[replayInfo[1]], gC_StyleNamesShort[replayInfo[2]], gC_TimeTypeNames[replayInfo[3]], RP_FILE_EXTENSION);
@@ -95,7 +131,15 @@ static void DisplayReplayMenu(int client)
 	}
 	else
 	{
-		GOKZ_PrintToChat(client, true, "%t", "No Replays Found (Mode)", gC_ModeNames[selectedReplayMode[client]]);
+		if (IsDownloadingGlobalReplay(selectedReplayMode[client]) && selectedGlobalReplay[client])
+		{
+			GOKZ_PrintToChat(client, true, "{darkred}全球录像正在下载中(%s)", gC_ModeNames[selectedReplayMode[client]]);
+		}
+		else
+		{
+			GOKZ_PrintToChat(client, true, "%t", "No Replays Found (Mode)", gC_ModeNames[selectedReplayMode[client]]);
+		}
+
 		GOKZ_PlayErrorSound(client);
 		DisplayReplayModeMenu(client);
 	}
@@ -115,7 +159,9 @@ static int ReplayMenuAddItems(int client, Menu menu)
 	{
 		IntToString(i, indexString, sizeof(indexString));
 		g_ReplayInfoCache.GetArray(i, replayInfo);
-		if (replayInfo[1] != selectedReplayMode[client]) // Wrong mode!
+
+		 // Wrong mode or wrong global
+		if (replayInfo[1] != selectedReplayMode[client] || view_as<bool>(replayInfo[4]) != selectedGlobalReplay[client])
 		{
 			continue;
 		}
