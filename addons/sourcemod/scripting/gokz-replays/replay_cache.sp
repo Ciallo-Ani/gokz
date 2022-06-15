@@ -91,10 +91,12 @@ void OnMapStart_ReplayCache()
 	
 	while (dir.GetNext(file, sizeof(file)))
 	{
-		if (StrContains(file, "rec"))
+		if (StrContains(file, "rec") == -1)
 		{
-			file[FindCharInString(file, '.', true)] = '\0';
+			continue;
 		}
+
+		file[FindCharInString(file, '.', true)] = '\0';
 
 		if (strlen(file) <= 1)
 		{
@@ -103,7 +105,10 @@ void OnMapStart_ReplayCache()
 
 		// Break down file name into pieces
 		char pieces[5][16];
-		ExplodeString(file, "_", pieces, sizeof(pieces), sizeof(pieces[]));
+		if (ExplodeString(file, "_", pieces, sizeof(pieces), sizeof(pieces[])) < 3)
+		{
+			continue;
+		}
 
 		// Extract info from the pieces
 		course = StringToInt(pieces[0]);
