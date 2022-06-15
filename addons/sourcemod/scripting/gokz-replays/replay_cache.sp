@@ -85,13 +85,14 @@ void OnMapStart_ReplayCache()
 	BuildPath(Path_SM, path, sizeof(path), "%s/%s", RP_DIRECTORY_RUNS, gC_CurrentMap);
 	DirectoryListing dir = OpenDirectory(path);
 	
-	// We want to find files that look like "0_KZT_NRM_PRO.rec"
+	// We want to find files that look like "0_KZT_NRM_PRO.rec" or "0_KZT_NRM_PRO.replay"
 	char file[PLATFORM_MAX_PATH];
 	int course, mode, style, timeType;
 	
 	while (dir.GetNext(file, sizeof(file)))
 	{
-		if (StrContains(file, "rec") == -1)
+		// .rec or .replay
+		if (StrContains(file, "re", false) == -1)
 		{
 			continue;
 		}

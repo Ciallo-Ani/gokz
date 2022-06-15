@@ -21,8 +21,10 @@ void DisplayReplayNetworkMenu(int client)
 	}
 
 	Menu menu = new Menu(MenuHandler_ReplayNetwork);
-	menu.AddItem("global", "全球记录");
-	menu.AddItem("local", "本地记录");
+	menu.SetTitle("选择回放数据库类型\n \n");
+
+	menu.AddItem("global", "全球 Global");
+	menu.AddItem("local", "本地 Local");
 	menu.Display(client, MENU_TIME_FOREVER);
 }
 
