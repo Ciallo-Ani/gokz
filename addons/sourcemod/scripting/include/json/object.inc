@@ -568,7 +568,7 @@ methodmap JSON_Object < StringMap
      */
     public bool SetString(const char[] key, const char[] value, bool replace = true)
     {
-        return this.SetString(key, value, replace)
+        return view_as<StringMap>(this).SetString(key, value, replace)
             && this.SetKeyType(key, Type_String)
             && this.SetKeyLength(key, strlen(value));
     }
