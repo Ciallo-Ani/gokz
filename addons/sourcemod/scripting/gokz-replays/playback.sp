@@ -63,7 +63,24 @@ int LoadReplayBot(int client, char[] path)
 	int bot;
 	if (GetBotsInUse() < RP_MAX_BOTS)
 	{
-		bot = GetUnusedBot();
+		if ((bot = GetUnusedBot()) != -1)
+		{
+			if (IsValidClient(botClient[bot]))
+			{
+				botCaller[bot] = client;
+				GetClientName(botClient[bot], botName[bot], sizeof(botName[]));
+				RequestFrame(Frame_SetBotStuff, bot);
+				if (IsValidClient(botCaller[bot]))
+				{
+					CreateTimer(0.2, Timer_SpectateMyBot, bot, TIMER_FLAG_NO_MAPCHANGE);
+				}
+			}
+			else
+			{
+				KickClientEx(botClient[bot]);
+				return -1;
+			}
+		}
 	}
 	else
 	{
@@ -85,7 +102,7 @@ int LoadReplayBot(int client, char[] path)
 		GOKZ_PlayErrorSound(client);
 		return -1;
 	}
-	botCaller[bot] = client;
+
 	return botClient[bot];
 }
 
@@ -248,26 +265,6 @@ void OnClientPutInServer_Playback(int client)
 	{
 		return;
 	}
-	
-	// Check if an unassigned bot has joined, and assign it
-	for (int bot; bot < RP_MAX_BOTS; bot++)
-	{
-		// Also check if the bot was created by us.
-		if (!botInGame[bot] && botCaller[bot] != 0)
-		{
-			botInGame[bot] = true;
-			botClient[bot] = client;
-			GetClientName(client, botName[bot], sizeof(botName[]));
-			RequestFrame(Frame_SetBotStuff, bot);
-			if (IsValidClient(botCaller[bot]))
-			{
-				MakePlayerSpectate(botCaller[bot], botClient[bot]);
-				botCaller[bot] = 0;
-			}
-
-			break;
-		}
-	}
 }
 
 void OnClientDisconnect_Playback(int client)
@@ -319,6 +316,14 @@ void OnPlayerRunCmd_Playback(int client, int &buttons)
 static void Frame_SetBotStuff(int bot)
 {
 	SetBotStuff(bot);
+}
+
+static Action Timer_SpectateMyBot(Handle timer, int bot)
+{
+	MakePlayerSpectate(botCaller[bot], botClient[bot]);
+	botCaller[bot] = 0;
+
+	return Plugin_Stop;
 }
 
 // Returns false if there was a problem loading the playback e.g. doesn't exist
@@ -1262,16 +1267,21 @@ static int GetUnusedBot()
 	{
 		if (!botInGame[bot])
 		{
+			int client = -1;
 			// Set the bot's team based on if it's NUB or PRO
 			if (botReplayType[bot] == ReplayType_Run 
 				&& GOKZ_GetTimeTypeEx(botTeleportsUsed[bot]) == TimeType_Pro)
 			{
-				GOKZ_CreateBot(CS_TEAM_CT);
+				client = GOKZ_CreateBot(CS_TEAM_CT);
 			}
 			else
 			{
-				GOKZ_CreateBot(CS_TEAM_T);
+				client = GOKZ_CreateBot(CS_TEAM_T);
 			}
+
+			botInGame[bot] = true;
+			botClient[bot] = client;
+
 			return bot;
 		}
 	}
