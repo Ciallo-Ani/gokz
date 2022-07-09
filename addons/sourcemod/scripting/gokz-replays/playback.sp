@@ -585,14 +585,14 @@ static bool LoadFormatVersion2Replay(File file, int client, int bot)
 		case ReplayType_Cheater:
 		{
 			// Reason
-			int ACReason;
-			file.ReadInt8(ACReason);
+			int acReason;
+			file.ReadInt8(acReason);
 			
 			// Type
 			botReplayType[bot] = ReplayType_Cheater;
 
 			// Finish spit to console
-			PrintToConsole(client, "AC Reason: %s", gC_ACReasons[ACReason]);
+			PrintToConsole(client, "AC Reason: %s", gC_ACReasons[acReason]);
 		}
 		case ReplayType_Jump:
 		{
@@ -647,15 +647,15 @@ static bool LoadFormatVersion2Replay(File file, int client, int bot)
 	
 	// Read tick data
 	preAndPostRunTickCount = RoundToZero(RP_PLAYBACK_BREATHER_TIME / GetTickInterval());
-	any tickDataArray[RP_V2_TICK_DATA_BLOCKSIZE];
+	any tickDataArray[sizeof(ReplayTickData)];
 	for (int i = 0; i < tickCount; i++)
 	{
-		file.ReadInt32(tickDataArray[RPDELTA_DELTAFLAGS]);
+		file.ReadInt32(tickDataArray[ReplayTickData::deltaFlags]);
 		
 		for (int index = 1; index < sizeof(tickDataArray); index++)
 		{
 			int currentFlag = (1 << index);
-			if (tickDataArray[RPDELTA_DELTAFLAGS] & currentFlag)
+			if (tickDataArray[ReplayTickData::deltaFlags] & currentFlag)
 			{
 				file.ReadInt32(tickDataArray[index]);
 			}
