@@ -39,6 +39,11 @@ public Plugin myinfo =
 Handle gH_ThisPlugin;
 Handle gH_DHooks_OnTeleport;
 Handle gH_DHooks_SetModel;
+Handle gH_BotAddCommand = INVALID_HANDLE;
+DynamicDetour gH_MaintainBotQuota = null;
+bool gB_Linux = false;
+int gI_WEAPONTYPE_UNKNOWN = 123123123;
+int gI_LatestClient = -1;
 
 int gI_CmdNum[MAXPLAYERS + 1];
 bool gB_OldOnGround[MAXPLAYERS + 1];
@@ -106,6 +111,7 @@ public void OnPluginStart()
 	CreateConVars();
 	HookEvents();
 	RegisterCommands();
+	LoadDHooks();
 	
 	OnPluginStart_MapTriggers();
 	OnPluginStart_MapButtons();
@@ -156,6 +162,8 @@ public void OnLibraryAdded(const char[] name)
 
 public void OnClientPutInServer(int client)
 {
+	gI_LatestClient = client;
+
 	OnClientPutInServer_Timer(client);
 	OnClientPutInServer_Pause(client);
 	OnClientPutInServer_Teleports(client);
@@ -531,4 +539,60 @@ static bool IsRealObjective(char[] objective)
 {
 	return StrEqual(objective, "PRISON ESCAPE") || StrEqual(objective, "DEATHMATCH")
 		|| StrEqual(objective, "BOMB TARGET") || StrEqual(objective, "HOSTAGE RESCUE");
+}
+
+static void LoadDHooks()
+{
+	GameData gamedata = new GameData("gokz-core.games");
+
+	if (gamedata == null)
+	{
+		SetFailState("Failed to load gokz-core gamedata");
+	}
+
+	gB_Linux = (gamedata.GetOffset("OS") == 2);
+
+	StartPrepSDKCall(gB_Linux ? SDKCall_Raw : SDKCall_Static);
+
+	if (!PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CCSBotManager::BotAddCommand"))
+	{
+		SetFailState("Failed to get CCSBotManager::BotAddCommand");
+	}
+
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // int team
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // bool isFromConsole
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // const char *profileName
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // CSWeaponType weaponType
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);  // BotDifficultyType difficulty
+	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain); // bool
+
+	if (!(gH_BotAddCommand = EndPrepSDKCall()))
+	{
+		SetFailState("Unable to prepare SDKCall for CCSBotManager::BotAddCommand");
+	}
+
+	if ((gI_WEAPONTYPE_UNKNOWN = gamedata.GetOffset("WEAPONTYPE_UNKNOWN")) == -1)
+	{
+		SetFailState("Failed to get WEAPONTYPE_UNKNOWN");
+	}
+
+	if (!(gH_MaintainBotQuota = DHookCreateDetour(Address_Null, CallConv_THISCALL, ReturnType_Void, ThisPointer_Address)))
+	{
+		SetFailState("Failed to create detour for BotManager::MaintainBotQuota");
+	}
+
+	if (!DHookSetFromConf(gH_MaintainBotQuota, gamedata, SDKConf_Signature, "BotManager::MaintainBotQuota"))
+	{
+		SetFailState("Failed to get address for BotManager::MaintainBotQuota");
+	}
+
+	gH_MaintainBotQuota.Enable(Hook_Pre, Detour_MaintainBotQuota);
+
+	delete gamedata;
+}
+
+// Stops bot_quota from doing anything.
+public MRESReturn Detour_MaintainBotQuota(int pThis)
+{
+	return MRES_Supercede;
 }

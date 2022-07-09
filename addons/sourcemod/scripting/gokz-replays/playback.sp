@@ -258,12 +258,13 @@ void OnClientPutInServer_Playback(int client)
 			botInGame[bot] = true;
 			botClient[bot] = client;
 			GetClientName(client, botName[bot], sizeof(botName[]));
-			SetBotStuff(bot);
+			RequestFrame(Frame_SetBotStuff, bot);
 			if (IsValidClient(botCaller[bot]))
 			{
 				MakePlayerSpectate(botCaller[bot], botClient[bot]);
 				botCaller[bot] = 0;
 			}
+
 			break;
 		}
 	}
@@ -314,6 +315,11 @@ void OnPlayerRunCmd_Playback(int client, int &buttons)
 
 
 // =====[ PRIVATE ]=====
+
+static void Frame_SetBotStuff(int bot)
+{
+	SetBotStuff(bot);
+}
 
 // Returns false if there was a problem loading the playback e.g. doesn't exist
 static bool LoadPlayback(int client, int bot, char[] path)
@@ -857,6 +863,7 @@ static void PlaybackVersion1(int client, int bot, int &buttons)
 		playbackTick[bot]++;
 	}
 }
+
 void PlaybackVersion2(int client, int bot, int &buttons)
 {
 	int size = playbackTickData[bot].Length;
@@ -1259,11 +1266,11 @@ static int GetUnusedBot()
 			if (botReplayType[bot] == ReplayType_Run 
 				&& GOKZ_GetTimeTypeEx(botTeleportsUsed[bot]) == TimeType_Pro)
 			{
-				ServerCommand("bot_add_ct");
+				GOKZ_CreateBot(CS_TEAM_CT);
 			}
 			else
 			{
-				ServerCommand("bot_add_t");
+				GOKZ_CreateBot(CS_TEAM_T);
 			}
 			return bot;
 		}
@@ -1351,10 +1358,6 @@ static void MakePlayerSpectate(int client, int bot)
 	SetEntProp(client, Prop_Send, "m_iObserverMode", 4);
 	SetEntPropEnt(client, Prop_Send, "m_hObserverTarget", bot);
 
-	int clientUserID = GetClientUserId(client);
-	DataPack data = new DataPack();
-	data.WriteCell(clientUserID);
-	data.WriteCell(GetClientUserId(bot));
 	CreateTimer(0.1, Timer_UpdateBotName, GetClientUserId(bot));
 	EnableReplayControls(client);
 }

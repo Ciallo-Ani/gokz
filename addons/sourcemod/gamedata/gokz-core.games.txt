@@ -33,6 +33,19 @@
 	{
 		"Offsets"
 		{
+			"OS"
+			{
+				"windows"   "1"
+				"linux"     "2"
+			}
+			// can be found inside BotAddCommand
+			"WEAPONTYPE_UNKNOWN"
+			{
+				"windows"   "19"
+				"linux"     "19"
+				"mac"       "19"
+			}
+			
 			// applies to trigger_vphysics_motion and trigger_wind
 			"CBaseVPhysicsTrigger::PassesTriggerFilters"
 			{
@@ -57,6 +70,22 @@
 			{
 				"windows"	"221"
 				"linux"		"222"
+			}
+		}
+
+		"Signatures"
+		{
+			// search string: "-nobots"
+			"BotManager::MaintainBotQuota"
+			{
+				"windows"   "\x55\x8B\xEC\x83\xEC\x18\x89\x4D\x2A\xFF\x15"
+				"linux"     "\x55\x89\xE5\x83\xEC\x78\x89\x7D\x2A\x8B\x7D\x2A\x89\x5D\x2A\x89\x75\x2A"
+			}
+			// search string: "Error - no profile for '%s' exists."
+			"CCSBotManager::BotAddCommand"
+			{
+				"windows"   "\x55\x8B\xEC\xA1\x2A\x2A\x2A\x2A\x53\x56\x57\x80\x78\x2A\x00"
+				"linux"     "\x55\x89\xE5\x57\x56\x53\x83\xEC\x4C\x8B\x15\x2A\x2A\x2A\x2A\x8B\x7D\x2A\x8B\x75\x2A\x0F\xB6\x5D\x2A"
 			}
 		}
 	}

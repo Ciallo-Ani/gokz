@@ -67,6 +67,8 @@ void CreateNatives()
 	CreateNative("GOKZ_SetTakeoffSpeed", Native_SetTakeoffSpeed);
 	CreateNative("GOKZ_GetValidJump", Native_GetValidJump);
 	CreateNative("GOKZ_JoinTeam", Native_JoinTeam);
+
+	CreateNative("GOKZ_CreateBot", Native_CreateBot);
 }
 
 public int Native_GetModeLoaded(Handle plugin, int numParams)
@@ -590,6 +592,11 @@ public int Native_JoinTeam(Handle plugin, int numParams)
 	return 0;
 }
 
+public int Native_CreateBot(Handle plugin, int numParams)
+{
+	return InternalCreateReplayBot(GetNativeCell(1));
+}
+
 
 
 // =====[ PRIVATE ]=====
@@ -607,3 +614,50 @@ static bool BlockedExternallyCalledTimerNative(Handle plugin, int client)
 	}
 	return false;
 } 
+
+static int InternalCreateReplayBot(int team)
+{
+	gI_LatestClient = -1;
+
+	// Do all this mp_randomspawn stuff on CSGO since it's easier than updating the signature for CCSGameRules::TeamFull.
+	int mp_randomspawn_orig;
+
+	ConVar mp_randomspawn = FindConVar("mp_randomspawn");
+
+	if (mp_randomspawn != null)
+	{
+		mp_randomspawn_orig = mp_randomspawn.IntValue;
+		mp_randomspawn.IntValue = team;
+	}
+
+	if (gB_Linux)
+	{
+		SDKCall(
+			gH_BotAddCommand,
+			0x10000,                   // thisptr           // unused (sourcemod needs > 0xFFFF though)
+			team,  // team
+			false,                     // isFromConsole
+			0,                         // profileName       // unused
+			gI_WEAPONTYPE_UNKNOWN,     // CSWeaponType      // WEAPONTYPE_UNKNOWN
+			0                          // BotDifficultyType // unused
+		);
+	}
+	else
+	{
+		SDKCall(
+			gH_BotAddCommand,
+			team,  // team
+			false,                     // isFromConsole
+			0,                         // profileName       // unused
+			gI_WEAPONTYPE_UNKNOWN,     // CSWeaponType      // WEAPONTYPE_UNKNOWN
+			0                          // BotDifficultyType // unused
+		);
+	}
+
+	if (mp_randomspawn != null)
+	{
+		mp_randomspawn.IntValue = mp_randomspawn_orig;
+	}
+
+	return gI_LatestClient;
+}

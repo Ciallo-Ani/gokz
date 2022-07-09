@@ -1424,6 +1424,14 @@ native bool GOKZ_GetValidJump(int client);
  */
 native void GOKZ_JoinTeam(int client, int team, bool restorePos = true);
 
+/**
+ * Internal Create Bot.
+ *
+ * @param team		Team index.
+ * @return			Bot entity index.
+ */
+native int GOKZ_CreateBot(int team);
+
 
 
 // =====[ STOCKS ]=====
@@ -1777,5 +1785,6 @@ public void __pl_gokz_core_SetNTVOptional()
 	MarkNativeAsOptional("GOKZ_SetTakeoffSpeed");
 	MarkNativeAsOptional("GOKZ_GetValidJump");
 	MarkNativeAsOptional("GOKZ_JoinTeam");
+	MarkNativeAsOptional("GOKZ_CreateBot");
 }
 #endif
