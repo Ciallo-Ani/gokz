@@ -41,9 +41,34 @@ jobs:
 
       - name: Compile gokz plugins
         run: |
-          echo -e "\nCompiling plugin..."
-          find . -name "gokz-*.sp" -type f
-          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH $(find . -name "gokz-*.sp" -type f)
+          echo -e "\nCompiling plugins..."
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-replays.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-slayonend.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-measure.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-playermodels.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-core.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-global.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-jumpstats.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-mode-simplekz.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-chat.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-mode-vanilla.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-saveloc.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-momsurffix.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-tips.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-quiet.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-racing.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-goto.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-mode-kztimer.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-localranks.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-anticheat.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-pistol.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-hud.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-paint.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-errorboxfixer.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-spec.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-jumpbeam.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-localdb.sp
+          spcomp64 -O2 -i $includePath -i $INCLUDE_PATH gokz-profile.sp
           mkdir ../plugins && mv ./*.smx ../plugins
         working-directory: ${{ env.SCRIPTING_PATH }}/
 
