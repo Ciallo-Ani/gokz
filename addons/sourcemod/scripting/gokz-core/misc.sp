@@ -459,6 +459,8 @@ public Action Timer_TimeLimit(Handle timer)
 public Action Timer_EndRound(Handle timer)
 {
 	CS_TerminateRound(1.0, CSRoundEnd_Draw, true);
+
+	return Plugin_Stop;
 }
 
 

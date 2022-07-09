@@ -153,6 +153,8 @@ public int MenuHandler_Goto(Menu menu, MenuAction action, int param1, int param2
 	{
 		delete menu;
 	}
+
+	return 0;
 }
 
 // Returns number of items added to the menu

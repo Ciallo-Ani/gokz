@@ -25,7 +25,7 @@ Action OnTimerStart_Racer(int client, int course)
 	return Plugin_Continue;
 }
 
-Action OnTimerStart_Post_Racer(int client)
+void OnTimerStart_Post_Racer(int client)
 {
 	lastTimerStartTime[client] = GetGameTime();
 }
@@ -357,7 +357,7 @@ public Action Timer_RequestTimeout(Handle timer, DataPack data)
 	if (!IsValidClient(host) || racerRaceID[host] != raceID
 		 || !IsValidClient(target) || racerRaceID[target] != raceID)
 	{
-		return;
+		return Plugin_Handled;
 	}
 	
 	// If haven't accepted by now, auto decline the race
@@ -365,6 +365,8 @@ public Action Timer_RequestTimeout(Handle timer, DataPack data)
 	{
 		DeclineRequest(target, true);
 	}
+
+	return Plugin_Handled;
 }
 
 int SendRequestAll(int host)

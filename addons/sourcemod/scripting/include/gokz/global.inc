@@ -241,7 +241,8 @@ stock GlobalMode GOKZ_GL_GetGlobalMode(int mode)
 		case Mode_SimpleKZ:return GlobalMode_KZSimple;
 		case Mode_KZTimer:return GlobalMode_KZTimer;
 	}
-	return GlobalMode;
+
+	return GlobalMode_KZTimer;
 }
 
 /**

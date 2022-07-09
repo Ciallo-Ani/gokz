@@ -304,5 +304,5 @@ public int Native_SetChatTag(Handle plugin, int numParams)
 		FormatEx(gC_PlayerTags[client], sizeof(gC_PlayerTags[]), "[%s %s] ", gC_ModeNamesShort[GOKZ_GetCoreOption(client, Option_Mode)], str);
 	}
 	
-	GetNativeString(3, gC_PlayerTagColors[client], sizeof(gC_PlayerTagColors[]));
+	return GetNativeString(3, gC_PlayerTagColors[client], sizeof(gC_PlayerTagColors[]));
 }

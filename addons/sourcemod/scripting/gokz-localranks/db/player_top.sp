@@ -130,6 +130,8 @@ public int MenuHandler_PlayerTopMode(Menu menu, MenuAction action, int param1, i
 	{
 		delete menu;
 	}
+
+	return 0;
 }
 
 public int MenuHandler_PlayerTop(Menu menu, MenuAction action, int param1, int param2)
@@ -146,6 +148,8 @@ public int MenuHandler_PlayerTop(Menu menu, MenuAction action, int param1, int p
 	{
 		delete menu;
 	}
+
+	return 0;
 }
 
 public int MenuHandler_PlayerTopSubmenu(Menu menu, MenuAction action, int param1, int param2)
@@ -159,4 +163,6 @@ public int MenuHandler_PlayerTopSubmenu(Menu menu, MenuAction action, int param1
 	{
 		delete menu;
 	}
+
+	return 0;
 } 

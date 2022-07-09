@@ -354,18 +354,33 @@ stock char[] FloatToStringEx(float num)
 /**
  * Increment an index, looping back to 0 if the max value is reached.
  *
- * @param index			Current index.
- * @param buffer		Max value of index.
+ * @param current		Current index.
+ * @param maximum		Max value of index.
  * @return				Current index incremented, or 0 if max value is reached.
  */
-stock int NextIndex(int index, int max)
+stock int NextIndex(int current, int maximum)
 {
-	index++;
-	if (index == max)
+	if (++current >= maximum)
 	{
 		return 0;
 	}
-	return index;
+	return current;
+}
+
+/**
+ * Decrement an index, looping back to maximum - 1 if the current value is < 0.
+ *
+ * @param current		Current index.
+ * @param maximum		Max value of index.
+ * @return				Current index decremented, or maximum - 1 if the current value is < 0.
+ */
+stock int PrevIndex(int current, int maximum)
+{
+	if (--current < 0)
+	{
+		return maximum - 1;
+	}
+	return current;
 }
 
 /**

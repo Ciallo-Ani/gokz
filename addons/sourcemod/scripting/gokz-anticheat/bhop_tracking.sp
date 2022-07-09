@@ -313,7 +313,7 @@ static int RecordButtons(int client, int buttons)
 {
 	gI_ButtonsIndex[client] = NextIndex(gI_ButtonsIndex[client], AC_MAX_BUTTON_SAMPLES);
 	gI_Buttons[client][gI_ButtonsIndex[client]] = buttons;
-	gI_ButtonCount[client]++;
+	return ++gI_ButtonCount[client];
 }
 
 // Counts the number of times buttons went from !IN_JUMP to IN_JUMP

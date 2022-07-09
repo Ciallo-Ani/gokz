@@ -303,13 +303,9 @@ static void BanSuspect(int client, ACReason reason)
 
 static void AutoBanClient(int client, int minutes, const char[] reason, const char[] kickMessage)
 {
-	if (gB_SourceBansPP)
+	if (gB_SourceBansPP || gB_SourceBans)
 	{
 		SBPP_BanPlayer(0, client, minutes, reason);
-	}
-	else if (gB_SourceBans)
-	{
-		SBBanPlayer(0, client, minutes, reason);
 	}
 	else
 	{

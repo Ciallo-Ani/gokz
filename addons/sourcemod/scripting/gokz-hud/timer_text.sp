@@ -74,6 +74,8 @@ public int PanelHandler_Menu(Menu menu, MenuAction action, int param1, int param
 	{
 		gB_MenuShowing[param1] = false;
 	}
+
+	return 0;
 }
 
 

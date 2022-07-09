@@ -756,26 +756,6 @@ void OnStartZoneStartTouch_Teleports(int client, int course)
 
 // =====[ PRIVATE ]=====
 
-static int NextIndex(int current, int maximum)
-{
-	int next = current + 1;
-	if (next >= maximum)
-	{
-		return 0;
-	}
-	return next;
-}
-
-static int PrevIndex(int current, int maximum)
-{
-	int prev = current - 1;
-	if (prev < 0)
-	{
-		return maximum - 1;
-	}
-	return prev;
-}
-
 static void TeleportDo(int client, const float destOrigin[3], const float destAngles[3])
 {
 	if (!IsPlayerAlive(client))

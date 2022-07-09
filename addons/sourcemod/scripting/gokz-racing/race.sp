@@ -161,6 +161,8 @@ bool StartRace(int raceID)
 public Action Timer_EndCountdown(Handle timer, int raceID)
 {
 	SetRaceInfo(raceID, RaceInfo_Status, RaceStatus_Started);
+
+	return Plugin_Handled;
 }
 
 

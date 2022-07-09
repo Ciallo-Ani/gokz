@@ -368,7 +368,7 @@ public void OnConfigsExecuted()
 	OnConfigsExecuted_OptionsMenu();
 }
 
-public Action OnNormalSound(int[] clients, int &numClients, char[] sample, int &entity, int &channel, float &volume, int &level, int &pitch, int &flags, char[] soundEntry, int &seed)
+public Action OnNormalSound(int clients[MAXPLAYERS], int &numClients, char sample[PLATFORM_MAX_PATH], int &entity, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
 {
 	if (OnNormalSound_StopSounds(entity) == Plugin_Handled)
 	{
@@ -481,7 +481,7 @@ static void HookEvents()
 	HookEvent("player_team", OnPlayerJoinTeam, EventHookMode_Pre);
 	HookEvent("player_death", OnPlayerDeath, EventHookMode_Pre);
 	HookEvent("round_start", OnRoundStart, EventHookMode_PostNoCopy);
-	AddNormalSoundHook(view_as<NormalSHook>(OnNormalSound));
+	AddNormalSoundHook(OnNormalSound);
 	
 	GameData gameData = new GameData("sdktools.games");
 	int offset;

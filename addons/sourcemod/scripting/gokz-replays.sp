@@ -128,8 +128,7 @@ public void OnConfigsExecuted()
 	FindConVar("bot_zombie").BoolValue = true;
 	FindConVar("bot_join_after_player").BoolValue = false;
 	FindConVar("bot_quota_mode").SetString("normal");
-	FindConVar("bot_quota").Flags &= ~FCVAR_NOTIFY;
-	FindConVar("bot_quota").Flags &= ~FCVAR_REPLICATED;
+	FindConVar("bot_quota").Flags &= ~(FCVAR_NOTIFY | FCVAR_REPLICATED);
 }
 
 public void OnEntityCreated(int entity, const char[] classname)
@@ -297,7 +296,7 @@ static void UpdateCurrentMap()
 // =====[ PUBLIC ]=====
 
 // NOTE: These serialisation functions were made because the internal data layout of enum structs can change.
-void TickDataToArray(ReplayTickData tickData, any result[RP_V2_TICK_DATA_BLOCKSIZE])
+void TickDataToArray(ReplayTickData tickData, any result[sizeof(ReplayTickData)])
 {
 	// NOTE: HAS to match ReplayTickData exactly!
 	result[0]  = tickData.deltaFlags;
@@ -322,7 +321,7 @@ void TickDataToArray(ReplayTickData tickData, any result[RP_V2_TICK_DATA_BLOCKSI
 	result[19] = tickData.buttonsForced;
 }
 
-void TickDataFromArray(any array[RP_V2_TICK_DATA_BLOCKSIZE], ReplayTickData result)
+void TickDataFromArray(any array[sizeof(ReplayTickData)], ReplayTickData result)
 {
 	// NOTE: HAS to match ReplayTickData exactly!
 	result.deltaFlags          = array[0];

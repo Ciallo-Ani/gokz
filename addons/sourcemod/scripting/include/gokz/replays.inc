@@ -36,26 +36,6 @@ enum ReplaySaveState
 	ReplaySave_Disabled
 };
 
-// NOTE: Replays use delta compression for storage.
-// This enum is the indices of the ReplayTickData enum struct.
-// NOTE: This has to match the ReplayTickData enum struct!!!
-enum
-{
-	RPDELTA_DELTAFLAGS = 0,
-	RPDELTA_DELTAFLAGS2,
-	RPDELTA_VEL[3],
-	RPDELTA_MOUSE[2],
-	RPDELTA_ORIGIN[3],
-	RPDELTA_ANGLES[3],
-	RPDELTA_VELOCITY[3],
-	RPDELTA_FLAGS,
-	RPDELTA_PACKETSPERSECOND,
-	RPDELTA_LAGGEDMOVEMENTVALUE,
-	RPDELTA_BUTTONSFORCED,
-	
-	RP_V2_TICK_DATA_BLOCKSIZE
-};
-
 
 
 // =====[ STRUCTS ] =====

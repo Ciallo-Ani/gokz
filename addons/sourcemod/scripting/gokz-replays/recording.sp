@@ -733,16 +733,16 @@ static void WriteTickData(File file, int client, int replayType, int airtime = 0
 
 static void WriteTickDataToFile(File file, bool isFirstTick, ReplayTickData tickDataStruct, ReplayTickData prevTickDataStruct)
 {
-	any tickData[RP_V2_TICK_DATA_BLOCKSIZE];
-	any prevTickData[RP_V2_TICK_DATA_BLOCKSIZE];
+	any tickData[sizeof(ReplayTickData)];
+	any prevTickData[sizeof(ReplayTickData)];
 	TickDataToArray(tickDataStruct, tickData);
 	TickDataToArray(prevTickDataStruct, prevTickData);
 	
-	int deltaFlags = (1 << RPDELTA_DELTAFLAGS);
+	int deltaFlags = (1 << ReplayTickData::deltaFlags);
 	if (isFirstTick)
 	{
 		// NOTE: Set every bit to 1 until RP_V2_TICK_DATA_BLOCKSIZE.
-		deltaFlags = (1 << (RP_V2_TICK_DATA_BLOCKSIZE)) - 1;
+		deltaFlags = (1 << (sizeof(ReplayTickData))) - 1;
 	}
 	else
 	{

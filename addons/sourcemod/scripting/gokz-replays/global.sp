@@ -90,7 +90,7 @@ public void GetGlobalRecordsTop_Callback(HTTPResponse response, DataPack dp, con
 	if (response.Status != HTTPStatus_OK)
 	{
 		delete dp;
-		LogError("GetRecordsTop failed! error: %s", error);
+		LogError("GetRecordsTop failed! error: %s, status: %d", error, response.Status);
 		return;
 	}
 
@@ -156,7 +156,7 @@ public void DownloadGlobalReplay_Callback(HTTPStatus status, DataPack dp, const 
 	if (status != HTTPStatus_OK)
 	{
 		delete dp;
-		LogError("download replay failed! error: %s", error);
+		LogError("download replay failed! error: %s, status: %d", error, status);
 		return;
 	}
 

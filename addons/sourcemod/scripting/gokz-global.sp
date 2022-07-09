@@ -601,7 +601,7 @@ static void SetupAPI()
 	}
 }
 
-public int GetAuthStatusCallback(JSON_Object auth_json, GlobalAPIRequestData request)
+public void GetAuthStatusCallback(JSON_Object auth_json, GlobalAPIRequestData request)
 {
 	if (request.Failure)
 	{
@@ -617,7 +617,7 @@ public int GetAuthStatusCallback(JSON_Object auth_json, GlobalAPIRequestData req
 	gB_APIKeyCheck = auth.IsValid;
 }
 
-public int GetModeInfoCallback(JSON_Object modes, GlobalAPIRequestData request)
+public void GetModeInfoCallback(JSON_Object modes, GlobalAPIRequestData request)
 {
 	if (request.Failure)
 	{
@@ -655,7 +655,7 @@ public int GetModeInfoCallback(JSON_Object modes, GlobalAPIRequestData request)
 	}
 }
 
-public int GetMapCallback(JSON_Object map_json, GlobalAPIRequestData request)
+public void GetMapCallback(JSON_Object map_json, GlobalAPIRequestData request)
 {
 	if (request.Failure || map_json == INVALID_HANDLE)
 	{
