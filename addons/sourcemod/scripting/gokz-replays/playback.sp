@@ -1364,4 +1364,6 @@ public Action Timer_UpdateBotName(Handle timer, int botUID)
 	Event e = CreateEvent("spec_target_updated");
 	e.SetInt("userid", botUID);
 	e.Fire();
+
+	return Plugin_Handled;
 }
