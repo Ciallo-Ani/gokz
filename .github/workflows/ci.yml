@@ -42,6 +42,7 @@ jobs:
       - name: Compile gokz plugins
         run: |
           echo -e "\nCompiling plugin..."
+          find . -name "gokz-*.sp" -type f
           spcomp64 -O2 -i $includePath -i $INCLUDE_PATH $(find . -name "gokz-*.sp" -type f)
           mkdir ../plugins && mv ./*.smx ../plugins
         working-directory: ${{ env.SCRIPTING_PATH }}/
