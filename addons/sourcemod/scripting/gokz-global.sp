@@ -293,14 +293,12 @@ public void GOKZ_OnTimerEnd_Post(int client, int course, float time, int telepor
 	}
 }
 
-public Action GOKZ_RP_OnReplaySaved(int client, int replayType, const char[] map, int course, int timeType, float time, const char[] filePath, bool tempReplay)
+public void GOKZ_RP_OnReplaySaved(int client, int replayType, const char[] map, int course, int timeType, float time, const char[] filePath)
 {
 	if (gB_GloballyVerified[client] && gB_InValidRun[client])
 	{
-		OnReplaySaved_SendReplay(client, replayType, map, course, timeType, time, filePath, tempReplay);
-		return Plugin_Handled;
+		OnReplaySaved_SendReplay(client, replayType, map, course, timeType, time, filePath);
 	}
-	return Plugin_Continue;
 }
 
 public void GOKZ_OnRunInvalidated(int client)
