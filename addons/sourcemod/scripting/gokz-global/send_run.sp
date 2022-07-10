@@ -125,6 +125,6 @@ public void SendReplay(int client)
 	storedReplayPath[client] = "";
 }
 
-public int SendReplayCallback(JSON_Object response, GlobalAPIRequestData request, DataPack dp)
+public void SendReplayCallback(JSON_Object response, GlobalAPIRequestData request, DataPack dp)
 {
 }
