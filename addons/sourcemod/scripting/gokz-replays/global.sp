@@ -13,8 +13,12 @@ static bool bDownloadingModes[3];
 
 void OnMapStart_GlobalReplay()
 {
-	GOKZ_PrintToChatAll(true, "正在下载全球录像中...");
+	// 等其他请求发送完再去下载回放，不然可能会触发429(send too many request)错误
+	CreateTimer(5.0, Timer_StartDownloadGlobalReplay);
+}
 
+static Action Timer_StartDownloadGlobalReplay(Handle timer)
+{
 	/* bool asd[3];
 	bDownloadingModes = asd; */
 
@@ -27,12 +31,28 @@ void OnMapStart_GlobalReplay()
 	// 不能用modelist列表获取, 因为response长度太短
 	for (int i = 0; i < sizeof(sGlobalModes); i++)
 	{
-		// get NUB record
-		GetGlobalRecordsTop(gC_CurrentMap, i, 0);
-
-		// get PRO record
-		GetGlobalRecordsTop(gC_CurrentMap, i, 1);
+		// 主动加延时, 不然可能会触发429(send too many request)错误
+		CreateTimer(i * 1.5, Timer_GetRecordsTop_Nub, i);
+		CreateTimer(i * 3.0, Timer_GetRecordsTop_Pro, i);
 	}
+
+	return Plugin_Handled;
+}
+
+static Action Timer_GetRecordsTop_Nub(Handle timer, int mode)
+{
+	// get NUB record
+	GetGlobalRecordsTop(gC_CurrentMap, mode, 0);
+
+	return Plugin_Handled;
+}
+
+static Action Timer_GetRecordsTop_Pro(Handle timer, int mode)
+{
+	// get PRO record
+	GetGlobalRecordsTop(gC_CurrentMap, mode, 1);
+
+	return Plugin_Handled;
 }
 
 void GOKZ_GL_OnNewTopTime_Recording(int course, int mode, int timeType, float runTime)
@@ -119,13 +139,50 @@ public void GetGlobalRecordsTop_Callback(HTTPResponse response, DataPack dp, con
 		else if ((replayID = record.GetInt("replay_id")) != 0)
 		{
 			haveReplay[course] = true;
-			GetGlobalReplayByReplayID(replayID, course, mode, type);
+
+			DataPack cache = new DataPack();
+			cache.WriteCell(replayID);
+			cache.WriteCell(course);
+			cache.WriteCell(mode);
+			cache.WriteCell(type);
+
+			CreateTimer(i * 1.0, Timer_GetGlobalReplayByReplayID, cache);
 		}
 
 		delete record;
 	}
 
 	delete top;
+}
+
+static Action Timer_GetGlobalReplayByReplayID(Handle timer, DataPack dp)
+{
+	dp.Reset();
+	int replayID = dp.ReadCell();
+	int course = dp.ReadCell();
+	int mode = dp.ReadCell();
+	int type = dp.ReadCell();
+
+	delete dp;
+
+	GetGlobalReplayByReplayID(replayID, course, mode, type);
+
+	char sTrack[16];
+	if (course == 0)
+	{
+		FormatEx(sTrack, sizeof(sTrack), "主线");
+	}
+	else
+	{
+		FormatEx(sTrack, sizeof(sTrack), "奖励 %d", course);
+	}
+
+	GOKZ_PrintToChatAll(true, "{default}正在下载录像中: 赛道: %s | 模式: %s | 类型: %s", 
+		sTrack,
+		gC_ModeNamesShort[mode],
+		type == 0 ? "存点" : "裸跳");
+
+	return Plugin_Handled;
 }
 
 static void GetGlobalReplayByReplayID(int replayID, int course, int mode, int type)
@@ -182,7 +239,7 @@ public void DownloadGlobalReplay_Callback(HTTPStatus status, DataPack dp, const 
 		FormatEx(sTrack, sizeof(sTrack), "奖励 %d", course);
 	}
 
-	GOKZ_PrintToChatAll(true, "全球录像已下载成功 >> 赛道: %s | 模式: %s | 类型: %s", 
+	GOKZ_PrintToChatAll(true, "{green}全球录像已下载成功 >> 赛道: %s | 模式: %s | 类型: %s", 
 		sTrack,
 		gC_ModeNamesShort[mode],
 		type == 0 ? "存点" : "裸跳");

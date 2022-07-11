@@ -77,7 +77,6 @@ int LoadReplayBot(int client, char[] path)
 			}
 			else
 			{
-				KickClientEx(botClient[bot]);
 				return -1;
 			}
 		}
@@ -1282,10 +1281,25 @@ static int GetUnusedBot()
 			botInGame[bot] = true;
 			botClient[bot] = client;
 
+			CreateTimer(0.2, Timer_CheckCreateSuccess, bot);
+
 			return bot;
 		}
 	}
 	return -1;
+}
+
+static Action Timer_CheckCreateSuccess(Handle timer, int bot)
+{
+	int client = botClient[bot];
+
+	if(!IsValidClient(client))
+	{
+		botInGame[bot] = false;
+		GOKZ_PrintToChat(botCaller[bot], true, "复活机器人失败! 服务器可能已满人");
+	}
+
+	return Plugin_Handled;
 }
 
 static void PlaybackSkipToTick(int bot, int tick)
