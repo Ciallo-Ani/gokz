@@ -17,6 +17,41 @@ void OnMapStart_GlobalReplay()
 	CreateTimer(5.0, Timer_StartDownloadGlobalReplay);
 }
 
+void GOKZ_GL_OnNewTopTime_Recording(int course, int mode, int timeType, float runTime)
+{
+	char sPath[PLATFORM_MAX_PATH];
+	BuildPath(Path_SM, sPath, sizeof(sPath),
+	 		"%s/%s/%d_%s_NRM_%s_GB.%s",
+	 		RP_DIRECTORY_RUNS, gC_CurrentMap, course, gC_ModeNamesShort[mode], gC_TimeTypeNames[timeType], RP_FILE_EXTENSION);
+
+	if (!FileExists(sPath))
+	{
+		return;
+	}
+
+	float replayTime = GetReplayTimeByHeader(sPath);
+
+	if (replayTime != -1.0 && runTime < replayTime)
+	{
+		char sOldPath[PLATFORM_MAX_PATH];
+		strcopy(sOldPath, sizeof(sOldPath), sPath);
+		ReplaceString(sOldPath, sizeof(sOldPath), "_GB", "");
+
+		// copy file
+		DeleteFile(sPath);
+		File_Copy(sOldPath, sPath);
+	}
+}
+
+bool IsDownloadingGlobalReplay(int mode)
+{
+	return bDownloadingModes[mode];
+}
+
+
+
+// ======[ PRIVATE ]======
+
 static Action Timer_StartDownloadGlobalReplay(Handle timer)
 {
 	/* bool asd[3];
@@ -55,40 +90,19 @@ static Action Timer_GetRecordsTop_Pro(Handle timer, int mode)
 	return Plugin_Handled;
 }
 
-void GOKZ_GL_OnNewTopTime_Recording(int course, int mode, int timeType, float runTime)
+static Action Timer_RegetRecordsTop(Handle timer, DataPack dp)
 {
-	char sPath[PLATFORM_MAX_PATH];
-	BuildPath(Path_SM, sPath, sizeof(sPath),
-	 		"%s/%s/%d_%s_NRM_%s_GB.%s",
-	 		RP_DIRECTORY_RUNS, gC_CurrentMap, course, gC_ModeNamesShort[mode], gC_TimeTypeNames[timeType], RP_FILE_EXTENSION);
+	dp.Reset();
 
-	if (!FileExists(sPath))
-	{
-		return;
-	}
+	int mode = dp.ReadCell();
+	int type = dp.ReadCell();
 
-	float replayTime = GetReplayTimeByHeader(sPath);
+	delete dp;
 
-	if (replayTime != -1.0 && runTime < replayTime)
-	{
-		char sOldPath[PLATFORM_MAX_PATH];
-		strcopy(sOldPath, sizeof(sOldPath), sPath);
-		ReplaceString(sOldPath, sizeof(sOldPath), "_GB", "");
+	GetGlobalRecordsTop(gC_CurrentMap, mode, type);
 
-		// copy file
-		DeleteFile(sPath);
-		File_Copy(sOldPath, sPath);
-	}
+	return Plugin_Handled;
 }
-
-bool IsDownloadingGlobalReplay(int mode)
-{
-	return bDownloadingModes[mode];
-}
-
-
-
-// ======[ PRIVATE ]======
 
 static void GetGlobalRecordsTop(const char[] map, int mode, int type)
 {
@@ -107,17 +121,26 @@ static void GetGlobalRecordsTop(const char[] map, int mode, int type)
 
 public void GetGlobalRecordsTop_Callback(HTTPResponse response, DataPack dp, const char[] error)
 {
-	if (response.Status != HTTPStatus_OK)
-	{
-		delete dp;
-		LogError("GetRecordsTop failed! error: %s, status: %d", error, response.Status);
-		return;
-	}
-
 	dp.Reset();
 
 	int mode = dp.ReadCell();
 	int type = dp.ReadCell();
+
+	if (response.Status != HTTPStatus_OK)
+	{
+		if (response.Status == HTTPStatus_TooManyRequests)
+		{
+			// 给我重发一遍, 你个傻卵
+			CreateTimer(2.0, Timer_RegetRecordsTop, dp);
+		}
+		else
+		{
+			LogError("GetRecordsTop failed! error: %s, status: %d", error, response.Status);
+			delete dp;
+		}
+
+		return;
+	}
 
 	delete dp;
 
@@ -195,6 +218,7 @@ static void GetGlobalReplayByReplayID(int replayID, int course, int mode, int ty
 	HTTPRequest replay = new HTTPRequest(sReplayAPI);
 
 	DataPack dp = new DataPack();
+	dp.WriteCell(replayID);
 	dp.WriteCell(course);
 	dp.WriteCell(mode);
 	dp.WriteCell(type);
@@ -208,20 +232,46 @@ static void GetGlobalReplayByReplayID(int replayID, int course, int mode, int ty
 	replay.DownloadFile(sPath, DownloadGlobalReplay_Callback, dp);
 }
 
-public void DownloadGlobalReplay_Callback(HTTPStatus status, DataPack dp, const char[] error)
+static Action Timer_ReDownloadGlobalReplay(Handle timer, DataPack dp)
 {
-	if (status != HTTPStatus_OK)
-	{
-		delete dp;
-		LogError("download replay failed! error: %s, status: %d", error, status);
-		return;
-	}
-
 	dp.Reset();
 
+	int replayID = dp.ReadCell();
 	int course = dp.ReadCell();
 	int mode = dp.ReadCell();
 	int type = dp.ReadCell();
+
+	delete dp;
+
+	GetGlobalReplayByReplayID(replayID, course, mode, type);
+
+	return Plugin_Handled;
+}
+
+public void DownloadGlobalReplay_Callback(HTTPStatus status, DataPack dp, const char[] error)
+{
+	dp.Reset();
+
+	dp.ReadCell(); // skip replayid
+	int course = dp.ReadCell();
+	int mode = dp.ReadCell();
+	int type = dp.ReadCell();
+
+	if (status != HTTPStatus_OK)
+	{
+		// 纯纯的傻卵，到这一步了还是429，全球组服务器真jb垃圾
+		if (status == HTTPStatus_TooManyRequests)
+		{
+			CreateTimer(3.0, Timer_ReDownloadGlobalReplay, dp);
+		}
+		else
+		{
+			delete dp;
+			LogError("download replay failed! error: %s, status: %d", error, status);
+		}
+
+		return;
+	}
 
 	delete dp;
 
