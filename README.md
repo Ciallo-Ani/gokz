@@ -24,13 +24,11 @@ For more information about what each plugin does, please see [PLUGINS.md](PLUGIN
 ### Server Requirements
 
  * 128 Tick (`-tickrate 128`)
- * [SourceMod ^1.10](https://www.sourcemod.net/downloads.php?branch=stable)
- * [DHooks Extension ^2.2.0](https://forums.alliedmods.net/showpost.php?p=2588686&postcount=589)
- * [MovementAPI Plugin ^2.2.0](https://github.com/danzayau/MovementAPI)
+ * [SourceMod ^1.11](https://www.sourcemod.net/downloads.php?branch=stable)
+ * [MovementAPI Plugin ^2.2.0](https://github.com/Ciallo-Ani/MovementAPI)
  * [Rest In Pawn](https://github.com/ErikMinekus/sm-ripext)
- * Optional - [GlobalAPI Plugin](https://bitbucket.org/kztimerglobalteam/globalapi-smplugin) (required for gokz-globals plugin)
+ * Optional - [GlobalAPI Plugin](https://github.com/Ciallo-Ani/gokz-globalapi-sm1.11) (required for gokz-globals plugin)
  * Optional - A "console cleaner" extension to prevent `Datatable warning` server console spam
- * Optional - [Updater Plugin](https://forums.alliedmods.net/showthread.php?t=169095) (automatically install minor GOKZ updates)
 
 ### Installing
 
