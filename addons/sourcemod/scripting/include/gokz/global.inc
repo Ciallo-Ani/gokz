@@ -118,6 +118,28 @@ stock float gF_EnforcedCVarValues[ENFORCEDCVAR_COUNT] =
  */
 forward void GOKZ_GL_OnNewTopTime(int client, int course, int mode, int timeType, int rank, int rankOverall, float runTime);
 
+/**
+ * Called when a player updated his points.
+ *
+ * @param client		 Client index.
+ * @param mode			 Player's movement mode.
+ * @param timeType		 Time type i.e. NUB or PRO.
+ * @param isTotal		 Is total points or map points, this affect the params below.
+ * @param oldTotalPoints Old total points.
+ * @param newTotalPoints New total points.
+ * @param oldMapPoints	 Old map points.
+ * @param newMapPoints	 New map points.
+ */
+forward void GOKZ_GL_OnPointsUpdated(int client, int mode, int timeType, bool isTotal, int oldTotalPoints, int newTotalPoints, int oldMapPoints, int newMapPoints);
+
+/**
+ * Called when a player fully updated his points.
+ *
+ * @param client		 Client index.
+ * @param mode			 Player's movement mode.
+ */
+forward void GOKZ_GL_OnPointsUpdated_Post(int client, int mode);
+
 
 
 // =====[ NATIVES ]=====
@@ -312,6 +334,5 @@ public void __pl_gokz_global_SetNTVOptional()
 	MarkNativeAsOptional("GOKZ_GL_GetMapPoints");
 	MarkNativeAsOptional("GOKZ_GL_GetRankPoints");
 	MarkNativeAsOptional("GOKZ_GL_GetFinishes");
-	MarkNativeAsOptional("GOKZ_GL_UpdatePoints");
 }
 #endif

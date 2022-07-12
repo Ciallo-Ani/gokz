@@ -255,8 +255,11 @@ stock int gI_ProfileOptionDefaults[PROFILEOPTION_COUNT] =
  * @param client		Client index.
  * @param mode	    	Game mode.
  * @param rank			The new rank.
+ * @param oldRank		The old rank.
  */
-forward void GOKZ_PF_OnRankUpdated(int client, int mode, int rank);
+forward void GOKZ_PF_OnRankUpdated(int client, int mode, int rank, int oldRank);
+
+
 
 // =====[ NATIVES ]=====
 
