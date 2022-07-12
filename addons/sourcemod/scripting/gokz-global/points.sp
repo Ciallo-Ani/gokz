@@ -65,22 +65,51 @@ void UpdatePoints(int client, bool force = false, int mode = -1)
 		mode = GOKZ_GetCoreOption(client, Option_Mode);
 	}
 	
-	if (!force || pointsTotal[client][mode][TimeType_Nub] == -1)
+	if (force)
 	{
-		GetPlayerRanks(client, mode, TimeType_Nub);
-		GetPlayerRanks(client, mode, TimeType_Pro);
+		GetPlayerRanks(client, mode, TimeType_Nub, _, true);
+		GetPlayerRanks(client, mode, TimeType_Pro, _, true);
 		requestsInProgress[client] += 2;
 	}
-	
-	if (gI_MapID != -1 && (!force || pointsMap[client][mode][TimeType_Nub] == -1))
+	else
 	{
-		GetPlayerRanks(client, mode, TimeType_Nub, gI_MapID);
-		GetPlayerRanks(client, mode, TimeType_Pro, gI_MapID);
-		requestsInProgress[client] += 2;
+		if (pointsTotal[client][mode][TimeType_Nub] == -1)
+		{
+			GetPlayerRanks(client, mode, TimeType_Nub);
+			requestsInProgress[client] += 1;
+		}
+		if (pointsTotal[client][mode][TimeType_Pro] == -1)
+		{
+			GetPlayerRanks(client, mode, TimeType_Pro);
+			requestsInProgress[client] += 1;
+		}
+	}
+	
+	if (gI_MapID != -1)
+	{
+		if (force)
+		{
+			GetPlayerRanks(client, mode, TimeType_Nub, gI_MapID, true);
+			GetPlayerRanks(client, mode, TimeType_Pro, gI_MapID, true);
+			requestsInProgress[client] += 2;
+		}
+		else
+		{
+			if (pointsMap[client][mode][TimeType_Nub] == -1)
+			{
+				GetPlayerRanks(client, mode, TimeType_Nub, gI_MapID);
+				requestsInProgress[client] += 1;
+			}
+			if (pointsMap[client][mode][TimeType_Pro] == -1)
+			{
+				GetPlayerRanks(client, mode, TimeType_Pro, gI_MapID);
+				requestsInProgress[client] += 1;
+			}
+		}
 	}
 }
 
-static void GetPlayerRanks(int client, int mode, int timeType, int mapID = DEFAULT_INT)
+static void GetPlayerRanks(int client, int mode, int timeType, int mapID = DEFAULT_INT, bool broadcast = false)
 {
 	char steamid[21];
 	int modes[1], mapIDs[1];
@@ -94,6 +123,7 @@ static void GetPlayerRanks(int client, int mode, int timeType, int mapID = DEFAU
 	dp.WriteCell(mode);
 	dp.WriteCell(timeType);
 	dp.WriteCell(mapID == DEFAULT_INT);
+	dp.WriteCell(broadcast);
 	GlobalAPI_GetPlayerRanks(UpdatePointsCallback, dp, _, _, _, _, steamid, _, _,
 							 mapIDs, mapID == DEFAULT_INT ? DEFAULT_INT : 1, { 0 }, 1,
 							 modes, 1, { 128 }, 1, timeType == TimeType_Nub ? DEFAULT_BOOL : false, _, _);
@@ -106,6 +136,7 @@ static void UpdatePointsCallback(JSON_Object ranks, GlobalAPIRequestData request
 	int mode = dp.ReadCell();
 	int timeType = dp.ReadCell();
 	bool isTotal = dp.ReadCell();
+	bool bBroadcast = dp.ReadCell();
 	delete dp;
 	
 	requestsInProgress[client]--;
@@ -116,6 +147,8 @@ static void UpdatePointsCallback(JSON_Object ranks, GlobalAPIRequestData request
 	}
 	
 	int points, totalFinishes;
+	int oldTotalPoints = pointsTotal[client][mode][timeType];
+	int oldMapPoints = pointsMap[client][mode][timeType];
 	if (request.Failure || !ranks.IsArray || ranks.Length == 0)
 	{
 		points = 0;
@@ -133,15 +166,26 @@ static void UpdatePointsCallback(JSON_Object ranks, GlobalAPIRequestData request
 	{
 		pointsTotal[client][mode][timeType] = points;
 		finishes[client][mode][timeType] = totalFinishes;
+
+		// not updated
+		if (oldTotalPoints == points)
+		{
+			return;
+		}
 	}
 	else
 	{
 		pointsMap[client][mode][timeType] = points;
+
+		// not updated
+		if (oldMapPoints == points)
+		{
+			return;
+		}
 	}
 	
-	// We always do that cause not all of the requests might have failed
-	if (requestsInProgress[client] == 0)
+	if (bBroadcast)
 	{
-		Call_OnPointsUpdated(client, mode);
+		Call_OnPointsUpdated(client, mode, timeType, isTotal, oldTotalPoints, pointsTotal[client][mode][timeType], oldMapPoints, pointsMap[client][mode][timeType]);
 	}
 }

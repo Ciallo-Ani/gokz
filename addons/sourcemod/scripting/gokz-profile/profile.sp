@@ -53,17 +53,54 @@ void Profile_OnClientDisconnect(int client)
 	profileWaitingForUpdate[client] = false;
 }
 
-void Profile_OnPointsUpdated(int player, int mode)
+void Profile_OnPointsUpdated(int player, int mode, int timeType, bool isTotal, int oldTotalPoints, int newTotalPoints, int oldMapPoints, int newMapPoints)
 {
-	for (int client = 1; client <= MaxClients; client++)
+	char sColor[16];
+	FormatEx(sColor, sizeof(sColor), "%s", StrEqual(gC_TimeTypeNames[timeType], "PRO", false) ? "{purple}" : "{blue}");
+
+	if (isTotal)
 	{
-		if (profileWaitingForUpdate[client]
-			&& profileTargetPlayer[client] == player
-			&& profileMode[client] == mode)
+		if (newTotalPoints == 0)
 		{
-			ShowProfile(client);
+			return;
+		}
+
+		char status[32];
+		int diff = newTotalPoints - oldTotalPoints;
+		if (diff > 0)
+		{
+			FormatEx(status, sizeof(status), "{green}获得了%d分{default}", diff);
+		}
+		else
+		{
+			FormatEx(status, sizeof(status), "{lightred}失去了%d分{default}", -diff);
+		}
+
+		GOKZ_PrintToChat(player, false, "%s%s %s >> {default}总积分发生变化, 你%s, 现在有: {gold}%d分", 
+			sColor, gC_ModeNamesShort[mode], gC_TimeTypeNames[timeType], status, newTotalPoints);
+	}
+	else
+	{
+		if (newMapPoints == 0)
+		{
+			return;
+		}
+		else if (oldMapPoints <= 0)
+		{
+			GOKZ_PrintToChat(player, false, "%s%s %s >> {default}完成地图{green}获得了%d分", 
+				sColor, gC_ModeNamesShort[mode], gC_TimeTypeNames[timeType], newMapPoints);
+		}
+		else
+		{
+			GOKZ_PrintToChat(player, false, "%s%s %s >> {default}刷新地图纪录{green}获得了%d分", 
+				sColor, gC_ModeNamesShort[mode], gC_TimeTypeNames[timeType], newMapPoints - oldMapPoints);
 		}
 	}
+}
+
+void Profile_OnRankUpdated(int client, int mode, int rank)
+{
+	GOKZ_PrintToChat(client, false, "{green}%s >> {default}你现在的称号为: %s[%s]", gC_ModeNamesShort[mode], gC_rankColor[rank], gC_rankName[rank]);
 }
 
 public int MenuHandler_Profile(Menu menu, MenuAction action, int param1, int param2)

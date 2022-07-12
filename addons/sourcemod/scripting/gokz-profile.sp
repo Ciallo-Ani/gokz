@@ -158,10 +158,10 @@ public void GOKZ_OnOptionChanged(int client, const char[] option, any newValue)
 	}
 }
 
-public void GOKZ_GL_OnPointsUpdated(int client, int mode)
+public void GOKZ_GL_OnPointsUpdated(int client, int mode, int timeType, bool isTotal, int oldTotalPoints, int newTotalPoints, int oldMapPoints, int newMapPoints)
 {
 	UpdateRank(client, mode);
-	Profile_OnPointsUpdated(client, mode);
+	Profile_OnPointsUpdated(client, mode, timeType, isTotal, oldTotalPoints, newTotalPoints, oldMapPoints, newMapPoints);
 }
 
 public void UpdateRank(int client, int mode)
@@ -233,10 +233,13 @@ public void UpdateRank(int client, int mode)
 		}
 	}
 
-	if (gI_Rank[client][mode] != rank)
+	if (gI_Rank[client][mode] != rank || rank == 0)
 	{
+		int oldRank = gI_Rank[client][mode];
 		gI_Rank[client][mode] = rank;
-		Call_OnRankUpdated(client, mode, rank);
+		Call_OnRankUpdated(client, mode, rank, oldRank);
+
+		Profile_OnRankUpdated(client, mode, rank);
 	}
 }
 
@@ -358,15 +361,16 @@ static GlobalForward H_OnRankUpdated;
 
 void CreateGlobalForwards()
 {
-	H_OnRankUpdated = new GlobalForward("GOKZ_PF_OnRankUpdated", ET_Ignore, Param_Cell, Param_Cell, Param_Cell);
+	H_OnRankUpdated = new GlobalForward("GOKZ_PF_OnRankUpdated", ET_Ignore, Param_Cell, Param_Cell, Param_Cell, Param_Cell);
 }
 
-void Call_OnRankUpdated(int client, int mode, int rank)
+void Call_OnRankUpdated(int client, int mode, int rank, int oldRank)
 {
 	Call_StartForward(H_OnRankUpdated);
 	Call_PushCell(client);
 	Call_PushCell(mode);
 	Call_PushCell(rank);
+	Call_PushCell(oldRank);
 	Call_Finish();
 }
 
