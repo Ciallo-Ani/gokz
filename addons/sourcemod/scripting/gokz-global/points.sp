@@ -188,4 +188,9 @@ static void UpdatePointsCallback(JSON_Object ranks, GlobalAPIRequestData request
 	{
 		Call_OnPointsUpdated(client, mode, timeType, isTotal, oldTotalPoints, pointsTotal[client][mode][timeType], oldMapPoints, pointsMap[client][mode][timeType]);
 	}
+
+	if (requestsInProgress[client] == 0)
+	{
+		Call_OnPointsUpdated_Post(client, mode);
+	}
 }

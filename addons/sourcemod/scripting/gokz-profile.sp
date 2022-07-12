@@ -120,12 +120,11 @@ public void GOKZ_OnOptionsMenuReady(TopMenu topMenu)
 	OnOptionsMenuReady_OptionsMenu(topMenu);
 }
 
-public void GOKZ_OnOptionsLoaded(int client)
+public void GOKZ_GL_OnPointsUpdated_Post(int client, int mode)
 {
 	if (IsValidClient(client) && !IsFakeClient(client))
 	{
-		int mode = GOKZ_GetCoreOption(client, Option_Mode);
-		UpdateTags(client, gI_Rank[client][mode], mode);
+		UpdateRank(client, mode);
 	}
 }
 
@@ -233,7 +232,7 @@ public void UpdateRank(int client, int mode)
 		}
 	}
 
-	if (gI_Rank[client][mode] != rank || rank == 0)
+	if (gI_Rank[client][mode] != rank)
 	{
 		int oldRank = gI_Rank[client][mode];
 		gI_Rank[client][mode] = rank;
