@@ -128,7 +128,8 @@ public void GetGlobalRecordsTop_Callback(HTTPResponse response, DataPack dp, con
 
 	if (response.Status != HTTPStatus_OK)
 	{
-		if (response.Status == HTTPStatus_TooManyRequests)
+		// Operation timed out after 10000 milliseconds with 0 out of 0 bytes received
+		if (response.Status == HTTPStatus_TooManyRequests || response.Status == HTTPStatus_Invalid)
 		{
 			// 给我重发一遍, 你个傻卵
 			CreateTimer(2.0, Timer_RegetRecordsTop, dp);
@@ -260,7 +261,8 @@ public void DownloadGlobalReplay_Callback(HTTPStatus status, DataPack dp, const 
 	if (status != HTTPStatus_OK)
 	{
 		// 纯纯的傻卵，到这一步了还是429，全球组服务器真jb垃圾
-		if (status == HTTPStatus_TooManyRequests)
+		// Operation timed out after 10000 milliseconds with 0 out of 0 bytes received
+		if (status == HTTPStatus_TooManyRequests || status == HTTPStatus_Invalid)
 		{
 			CreateTimer(3.0, Timer_ReDownloadGlobalReplay, dp);
 		}

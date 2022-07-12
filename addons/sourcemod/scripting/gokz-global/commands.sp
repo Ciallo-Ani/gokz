@@ -3,10 +3,10 @@ void RegisterCommands()
 	RegConsoleCmd("sm_globalcheck", CommandGlobalCheck, "[KZ] Show whether global records are currently enabled in chat.");
 	RegConsoleCmd("sm_gc", CommandGlobalCheck, "[KZ] Show whether global records are currently enabled in chat.");
 	RegConsoleCmd("sm_tier", CommandTier, "[KZ] Show the map's tier in chat.");
-	RegConsoleCmd("sm_gpb", CommandPrintPBs, "[KZ] Show main course global personal best in chat. Usage: !gpb <map>");
+	//RegConsoleCmd("sm_gpb", CommandPrintPBs, "[KZ] Show main course global personal best in chat. Usage: !gpb <map>");
 	RegConsoleCmd("sm_gr", CommandPrintRecords, "[KZ] Show main course global record times in chat. Usage: !gr <map>");
 	RegConsoleCmd("sm_gwr", CommandPrintRecords, "[KZ] Show main course global record times in chat. Usage: !gwr <map>");
-	RegConsoleCmd("sm_gbpb", CommandPrintBonusPBs, "[KZ] Show bonus global personal best in chat. Usage: !gbpb <#bonus> <map>");
+	//RegConsoleCmd("sm_gbpb", CommandPrintBonusPBs, "[KZ] Show bonus global personal best in chat. Usage: !gbpb <#bonus> <map>");
 	RegConsoleCmd("sm_gbr", CommandPrintBonusRecords, "[KZ] Show bonus global record times in chat. Usage: !bgr <#bonus> <map>");
 	RegConsoleCmd("sm_gbwr", CommandPrintBonusRecords, "[KZ] Show bonus global record times in chat. Usage: !bgwr <#bonus> <map>");
 	RegConsoleCmd("sm_gmaptop", CommandMapTop, "[KZ] Open a menu showing the top global main course times of a map. Usage: !gmaptop <map>");

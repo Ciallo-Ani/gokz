@@ -1378,6 +1378,11 @@ static bool IsCurrentWeaponSecondary(int client)
 
 static void MakePlayerSpectate(int client, int bot)
 {
+	if (!IsValidClient(client) || !IsValidClient(bot))
+	{
+		return;
+	}
+
 	GOKZ_JoinTeam(client, CS_TEAM_SPECTATOR);
 	SetEntProp(client, Prop_Send, "m_iObserverMode", 4);
 	SetEntPropEnt(client, Prop_Send, "m_hObserverTarget", bot);
