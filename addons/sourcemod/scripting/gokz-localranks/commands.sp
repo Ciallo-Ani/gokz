@@ -9,8 +9,8 @@ void RegisterCommands()
 	RegConsoleCmd("sm_bmaptop", CommandBMapTop, "[KZ] Open a menu showing the top bonus times of a map. Usage: !bmaptop <#bonus> <map>");
 	RegConsoleCmd("sm_bonustop", CommandBMapTop, "[KZ] Open a menu showing the top bonus times of a map. Usage: !bonustop <#bonus> <map>");
 	RegConsoleCmd("sm_btop", CommandBMapTop, "[KZ] Open a menu showing the top bonus times of a map. Usage: !btop <#bonus> <map>");
-	RegConsoleCmd("sm_pb", CommandPB, "[KZ] Show PB main course times and ranks in chat. Usage: !pb <map> <player>");
-	RegConsoleCmd("sm_bpb", CommandBPB, "[KZ] Show PB bonus times and ranks in chat. Usage: !bpb <#bonus> <map> <player>");
+	//RegConsoleCmd("sm_pb", CommandPB, "[KZ] Show PB main course times and ranks in chat. Usage: !pb <map> <player>");
+	//RegConsoleCmd("sm_bpb", CommandBPB, "[KZ] Show PB bonus times and ranks in chat. Usage: !bpb <#bonus> <map> <player>");
 	RegConsoleCmd("sm_wr", CommandWR, "[KZ] Show main course record times in chat. Usage: !wr <map>");
 	RegConsoleCmd("sm_bwr", CommandBWR, "[KZ] Show bonus record times in chat. Usage: !bwr <#bonus> <map>");
 	RegConsoleCmd("sm_avg", CommandAVG, "[KZ] Show the average main course run time in chat. Usage !avg <map>");

@@ -40,6 +40,8 @@ Handle gH_ThisPlugin;
 Handle gH_DHooks_OnTeleport;
 Handle gH_DHooks_SetModel;
 Handle gH_BotAddCommand = INVALID_HANDLE;
+Handle gH_SetMaxClients = INVALID_HANDLE;
+DynamicDetour gH_TeamFull = null;
 DynamicDetour gH_MaintainBotQuota = null;
 bool gB_Linux = false;
 int gI_WEAPONTYPE_UNKNOWN = 123123123;
@@ -552,6 +554,8 @@ static void LoadDHooks()
 
 	gB_Linux = (gamedata.GetOffset("OS") == 2);
 
+
+	// CCSBotManager::BotAddCommand
 	StartPrepSDKCall(gB_Linux ? SDKCall_Raw : SDKCall_Static);
 
 	if (!PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CCSBotManager::BotAddCommand"))
@@ -571,11 +575,59 @@ static void LoadDHooks()
 		SetFailState("Unable to prepare SDKCall for CCSBotManager::BotAddCommand");
 	}
 
+
+	// CGameServer::SetMaxClients
+	StartPrepSDKCall(SDKCall_Server);
+	if (!PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CGameServer::SetMaxClients"))
+	{
+		SetFailState("failed to get CGameServer::SetMaxClients");
+	}
+
+	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // int number
+	PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain); // bool
+
+	if (!(gH_SetMaxClients = EndPrepSDKCall()))
+	{
+		SetFailState("Unable to prepare SDKCall for CGameServer::SetMaxClients");
+	}
+	else
+	{
+		// set virtual maxplayers to game.
+		// avoid failing to spawn replay bots
+		static int maxs = 64;
+		bool success = SetMaxClients(maxs);
+
+		if (!success)
+		{
+			LogError("set maxclients failed!");
+		}
+	}
+
+
+	// CCSGameRules::TeamFull
+	if (!(gH_TeamFull = new DynamicDetour(Address_Null, CallConv_THISCALL, ReturnType_Bool, ThisPointer_Address)))
+	{
+		SetFailState("Failed to create detour for CCSGameRules::TeamFull");
+	}
+
+	gH_TeamFull.AddParam(HookParamType_Int); // Team ID
+
+	if (!gH_TeamFull.SetFromConf(gamedata, SDKConf_Signature, "CCSGameRules::TeamFull"))
+	{
+		SetFailState("Failed to get address for CCSGameRules::TeamFull");
+	}
+
+	gH_TeamFull.Enable(Hook_Pre, Detour_TeamFull);
+
+
+	// WEAPONTYPE_UNKNOWN
 	if ((gI_WEAPONTYPE_UNKNOWN = gamedata.GetOffset("WEAPONTYPE_UNKNOWN")) == -1)
 	{
 		SetFailState("Failed to get WEAPONTYPE_UNKNOWN");
 	}
 
+
+	// BotManager::MaintainBotQuota
 	if (!(gH_MaintainBotQuota = DHookCreateDetour(Address_Null, CallConv_THISCALL, ReturnType_Void, ThisPointer_Address)))
 	{
 		SetFailState("Failed to create detour for BotManager::MaintainBotQuota");
@@ -592,7 +644,18 @@ static void LoadDHooks()
 }
 
 // Stops bot_quota from doing anything.
-public MRESReturn Detour_MaintainBotQuota(int pThis)
+static MRESReturn Detour_MaintainBotQuota(int pThis)
 {
 	return MRES_Supercede;
+}
+
+static MRESReturn Detour_TeamFull(int pThis, DHookReturn hReturn, DHookParam hParams)
+{
+	hReturn.Value = false;
+	return MRES_Supercede;
+}
+
+static bool SetMaxClients(int num)
+{
+	return SDKCall(gH_SetMaxClients, num);
 }

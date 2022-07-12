@@ -80,6 +80,12 @@ int LoadReplayBot(int client, char[] path)
 				return -1;
 			}
 		}
+		else
+		{
+			GOKZ_PrintToChat(client, true, "{lightred}服务器已满人, 无法复活bot, 该问题丞待解决.");
+			GOKZ_PlayErrorSound(client);
+			return -1;
+		}
 	}
 	else
 	{
@@ -1266,40 +1272,34 @@ static int GetUnusedBot()
 	{
 		if (!botInGame[bot])
 		{
-			int client = -1;
+			int team = CS_TEAM_T;
 			// Set the bot's team based on if it's NUB or PRO
 			if (botReplayType[bot] == ReplayType_Run 
 				&& GOKZ_GetTimeTypeEx(botTeleportsUsed[bot]) == TimeType_Pro)
 			{
-				client = GOKZ_CreateBot(CS_TEAM_CT);
+				team = CS_TEAM_CT;
+			}
+
+			int client = GOKZ_CreateBot(team);
+			int currentTeam = GetClientTeam(client);
+
+			if (client != -1 && (currentTeam != CS_TEAM_CT && currentTeam != CS_TEAM_T))
+			{
+				CS_SwitchTeam(client, team);
+				CS_RespawnPlayer(client);
 			}
 			else
 			{
-				client = GOKZ_CreateBot(CS_TEAM_T);
+				return -1;
 			}
 
 			botInGame[bot] = true;
 			botClient[bot] = client;
 
-			CreateTimer(0.2, Timer_CheckCreateSuccess, bot);
-
 			return bot;
 		}
 	}
 	return -1;
-}
-
-static Action Timer_CheckCreateSuccess(Handle timer, int bot)
-{
-	int client = botClient[bot];
-
-	if(!IsValidClient(client))
-	{
-		botInGame[bot] = false;
-		GOKZ_PrintToChat(botCaller[bot], true, "复活机器人失败! 服务器可能已满人");
-	}
-
-	return Plugin_Handled;
 }
 
 static void PlaybackSkipToTick(int bot, int tick)
