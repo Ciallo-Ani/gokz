@@ -1281,16 +1281,17 @@ static int GetUnusedBot()
 			}
 
 			int client = GOKZ_CreateBot(team);
-			int currentTeam = GetClientTeam(client);
 
-			if (client != -1 && (currentTeam != CS_TEAM_CT && currentTeam != CS_TEAM_T))
+			if (client == -1)
+			{
+				return -1;
+			}
+
+			int currentTeam = GetClientTeam(client);
+			if (currentTeam != CS_TEAM_CT && currentTeam != CS_TEAM_T)
 			{
 				CS_SwitchTeam(client, team);
 				CS_RespawnPlayer(client);
-			}
-			else
-			{
-				return -1;
 			}
 
 			botInGame[bot] = true;
