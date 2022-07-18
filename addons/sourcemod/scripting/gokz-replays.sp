@@ -119,6 +119,7 @@ public void OnMapStart()
 	OnMapStart_Recording();
 	OnMapStart_ReplayCache();
 	OnMapStart_GlobalReplay();
+	OnMapStart_PlayBack();
 }
 
 public void OnConfigsExecuted()
@@ -132,8 +133,6 @@ public void OnConfigsExecuted()
 	FindConVar("bot_join_after_player").BoolValue = false;
 	FindConVar("bot_quota_mode").SetString("normal");
 	FindConVar("bot_quota").Flags &= ~(FCVAR_NOTIFY | FCVAR_REPLICATED);
-
-	ServerCommand("bot_kick");
 }
 
 public void OnEntityCreated(int entity, const char[] classname)
@@ -199,7 +198,6 @@ public void OnClientAuthorized(int client, const char[] auth)
 
 public void OnClientDisconnect(int client)
 {
-	OnClientDisconnect_Playback(client);
 	OnClientDisconnect_Recording(client);
 }
 

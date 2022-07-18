@@ -17,9 +17,7 @@ static float breatherStartTime[RP_MAX_BOTS];
 
 // Original bot caller, needed for OnClientPutInServer callback
 static int botCaller[RP_MAX_BOTS];
-// Original bot name after creation by bot_add, needed for bot removal
-static char botName[RP_MAX_BOTS][MAX_NAME_LENGTH];
-static bool botInGame[RP_MAX_BOTS];
+static bool botInUsed[RP_MAX_BOTS];
 static int botClient[RP_MAX_BOTS];
 static bool botDataLoaded[RP_MAX_BOTS];
 static int botReplayType[RP_MAX_BOTS];
@@ -49,35 +47,44 @@ static bool botIsTakeoff[RP_MAX_BOTS];
 
 
 
+// =====[ EVENTS ]=====
+
+void OnMapStart_PlayBack()
+{
+	ServerCommand("bot_kick");
+	RequestFrame(Frame_CreateUnusedBot);
+}
+
+void Frame_CreateUnusedBot()
+{
+	int mid = RP_MAX_BOTS / 2;
+
+	for(int i = 0; i < RP_MAX_BOTS; i++)
+	{
+		botClient[i] = GOKZ_CreateBot(i < mid ? CS_TEAM_CT : CS_TEAM_T);
+		ResetBotNameAndTag(i);
+	}
+}
+
 // =====[ PUBLIC ]=====
 
 // Returns the client index of the replay bot, or -1 otherwise
 int LoadReplayBot(int client, replay_playback_cache_t cache)
 {
 	int bot;
-	if (GetBotsInUse() < RP_MAX_BOTS)
+	if ((bot = GetUnusedBot(client)) != -1)
 	{
-		if ((bot = GetUnusedBot()) != -1)
+		if (IsValidClient(botClient[bot]))
 		{
-			if (IsValidClient(botClient[bot]))
+			botCaller[bot] = client;
+			RequestFrame(Frame_SetBotStuff, bot);
+			if (IsValidClient(botCaller[bot]))
 			{
-				botCaller[bot] = client;
-				GetClientName(botClient[bot], botName[bot], sizeof(botName[]));
-				RequestFrame(Frame_SetBotStuff, bot);
-				if (IsValidClient(botCaller[bot]))
-				{
-					CreateTimer(0.2, Timer_SpectateMyBot, bot, TIMER_FLAG_NO_MAPCHANGE);
-				}
-			}
-			else
-			{
-				return -1;
+				CreateTimer(0.2, Timer_SpectateMyBot, bot, TIMER_FLAG_NO_MAPCHANGE);
 			}
 		}
 		else
 		{
-			GOKZ_PrintToChat(client, true, "{lightred}已达到服务器bot最大数量: %d", RP_MAX_BOTS);
-			GOKZ_PlayErrorSound(client);
 			return -1;
 		}
 	}
@@ -261,21 +268,6 @@ void OnClientPutInServer_Playback(int client)
 	}
 }
 
-void OnClientDisconnect_Playback(int client)
-{
-	for (int bot; bot < RP_MAX_BOTS; bot++)
-	{
-		if (botClient[bot] != client)
-		{
-			continue;
-		}
-		
-		botInGame[bot] = false;
-		botDataLoaded[bot] = false;
-		delete playbackTickData[bot];
-	}
-}
-
 void OnPlayerRunCmd_Playback(int client, int &buttons)
 {
 	if (!IsFakeClient(client))
@@ -286,7 +278,7 @@ void OnPlayerRunCmd_Playback(int client, int &buttons)
 	for (int bot; bot < RP_MAX_BOTS; bot++)
 	{
 		// Check if not the bot we're looking for
-		if (!botInGame[bot] || botClient[bot] != client || !botDataLoaded[bot] || 
+		if (!botInUsed[bot] || botClient[bot] != client || !botDataLoaded[bot] || 
 			playbackTickData[bot] == null || playbackTickData[bot].Length < 1)
 		{
 			continue;
@@ -308,7 +300,6 @@ static void Frame_SetBotStuff(int bot)
 static Action Timer_SpectateMyBot(Handle timer, int bot)
 {
 	MakePlayerSpectate(botCaller[bot], botClient[bot]);
-	botCaller[bot] = 0;
 
 	return Plugin_Stop;
 }
@@ -480,10 +471,7 @@ void PlaybackVersion2(int client, int bot, int &buttons)
 			playbackTick[bot]++;
 			if (playbackTick[bot] == size)
 			{
-				delete playbackTickData[bot];
-				botDataLoaded[bot] = false;
-				CancelReplayControlsForBot(bot);
-				ServerCommand("bot_kick %s", botName[bot]);
+				StopPlayBack(bot);
 			}
 		}
 	}
@@ -500,10 +488,7 @@ void PlaybackVersion2(int client, int bot, int &buttons)
 		}
 		if (spec == MAXPLAYERS + 1 && !IsReplayBotControlled(bot, botClient[bot]))
 		{
-			delete playbackTickData[bot];
-			botDataLoaded[bot] = false;
-			CancelReplayControlsForBot(bot);
-			ServerCommand("bot_kick %s", botName[bot]);
+			StopPlayBack(bot);
 			return;
 		}
 		
@@ -698,7 +683,7 @@ void PlaybackVersion2(int client, int bot, int &buttons)
 // Set the bot client's GOKZ options, clan tag and name based on the loaded replay data
 static void SetBotStuff(int bot)
 {
-	if (!botInGame[bot] || !botDataLoaded[bot])
+	if (!botInUsed[bot] || !botDataLoaded[bot])
 	{
 		return;
 	}
@@ -831,9 +816,9 @@ static void SetBotName(int bot)
 static int GetBotsInUse()
 {
 	int botsInUse = 0;
-	for (int bot; bot < RP_MAX_BOTS; bot++)
+	for (int bot = 0; bot < RP_MAX_BOTS; bot++)
 	{
-		if (botInGame[bot] && botDataLoaded[bot])
+		if (botInUsed[bot] && botDataLoaded[bot])
 		{
 			botsInUse++;
 		}
@@ -841,37 +826,18 @@ static int GetBotsInUse()
 	return botsInUse;
 }
 
-// Returns a bot that isn't currently replaying, or -1 if no unused bots found
-static int GetUnusedBot()
+// Returns a bot that isn't currently replaying or already played by caller, or -1 if no unused bots found
+static int GetUnusedBot(int client = -1)
 {
 	for (int bot = 0; bot < RP_MAX_BOTS; bot++)
 	{
-		if (!botInGame[bot])
+		if (botInUsed[bot] && botCaller[bot] == client && client != -1)
 		{
-			int team = CS_TEAM_T;
-			// Set the bot's team based on if it's NUB or PRO
-			if (botReplayType[bot] == ReplayType_Run 
-				&& GOKZ_GetTimeTypeEx(botTeleportsUsed[bot]) == TimeType_Pro)
-			{
-				team = CS_TEAM_CT;
-			}
-
-			int client = GOKZ_CreateBot(team);
-
-			if (client == -1)
-			{
-				return -1;
-			}
-
-			int currentTeam = GetClientTeam(client);
-			if (currentTeam != CS_TEAM_CT && currentTeam != CS_TEAM_T)
-			{
-				CS_SwitchTeam(client, team);
-				CS_RespawnPlayer(client);
-			}
-
-			botInGame[bot] = true;
-			botClient[bot] = client;
+			return bot;
+		}
+		else if (!botInUsed[bot])
+		{
+			botInUsed[bot] = true;
 
 			return bot;
 		}
@@ -953,11 +919,27 @@ static void MakePlayerSpectate(int client, int bot)
 	EnableReplayControls(client);
 }
 
-public Action Timer_UpdateBotName(Handle timer, int botUID)
+static Action Timer_UpdateBotName(Handle timer, int botUID)
 {
 	Event e = CreateEvent("spec_target_updated");
 	e.SetInt("userid", botUID);
 	e.Fire();
 
 	return Plugin_Handled;
+}
+
+static void StopPlayBack(int bot)
+{
+	delete playbackTickData[bot];
+	botInUsed[bot] = false;
+	botDataLoaded[bot] = false;
+	CancelReplayControlsForBot(bot);
+	ResetBotNameAndTag(bot);
+}
+
+static void ResetBotNameAndTag(int bot)
+{
+	gB_HideNameChange = true;
+	SetClientName(botClient[bot], IntToStringEx(bot));
+	CS_SetClientClanTag(botClient[bot], "!replay");
 }
