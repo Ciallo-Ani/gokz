@@ -6,6 +6,7 @@ static char sGlobalModes[][] =
 };
 
 static bool bDownloadingModes[3];
+static int iRequestCounts = 0;
 
 
 
@@ -13,6 +14,26 @@ static bool bDownloadingModes[3];
 
 void OnMapStart_GlobalReplay()
 {
+	// delete global replays
+	char path[PLATFORM_MAX_PATH];
+	BuildPath(Path_SM, path, sizeof(path), "%s/%s", RP_DIRECTORY_RUNS, gC_CurrentMap);
+	DirectoryListing dir = OpenDirectory(path);
+	
+	// We want to find files that look like "0_KZT_NRM_PRO_GB.rec" or "0_KZT_NRM_PRO_GB.replay"
+	char file[PLATFORM_MAX_PATH];
+	char newPath[PLATFORM_MAX_PATH];
+	while (dir.GetNext(file, sizeof(file)))
+	{
+		// .rec or .replay
+		if (StrContains(file, "re", false) == -1 || StrContains(file, "GB", true) == -1)
+		{
+			continue;
+		}
+
+		FormatEx(newPath, sizeof(newPath), "%s/%s", path, file);
+		DeleteFile(newPath);
+	}
+
 	// 等其他请求发送完再去下载回放，不然可能会触发429(send too many request)错误
 	CreateTimer(5.0, Timer_StartDownloadGlobalReplay);
 }
@@ -43,6 +64,11 @@ void GOKZ_GL_OnNewTopTime_Recording(int course, int mode, int timeType, float ru
 	}
 }
 
+void OnDownloadGlobalReplayDone()
+{
+
+}
+
 bool IsDownloadingGlobalReplay(int mode)
 {
 	return bDownloadingModes[mode];
@@ -66,6 +92,7 @@ static Action Timer_StartDownloadGlobalReplay(Handle timer)
 	// 不能用modelist列表获取, 因为response长度太短
 	for (int i = 0; i < sizeof(sGlobalModes); i++)
 	{
+		iRequestCounts += 2;
 		// 主动加延时, 不然可能会触发429(send too many request)错误
 		CreateTimer(i * 1.5, Timer_GetRecordsTop_Nub, i);
 		CreateTimer(i * 3.0, Timer_GetRecordsTop_Pro, i);
@@ -136,6 +163,7 @@ public void GetGlobalRecordsTop_Callback(HTTPResponse response, DataPack dp, con
 		}
 		else
 		{
+			iRequestCounts--;
 			LogError("GetRecordsTop failed! error: %s, status: %d", error, response.Status);
 			delete dp;
 		}
@@ -268,6 +296,7 @@ public void DownloadGlobalReplay_Callback(HTTPStatus status, DataPack dp, const 
 		}
 		else
 		{
+			iRequestCounts--;
 			delete dp;
 			LogError("download replay failed! error: %s, status: %d", error, status);
 		}
@@ -277,7 +306,7 @@ public void DownloadGlobalReplay_Callback(HTTPStatus status, DataPack dp, const 
 
 	delete dp;
 
-	AddToReplayInfoCache(course, mode, 0, type, 1);
+	AddToReplayInfoCache(course, mode, 0, type, true);
 
 	bDownloadingModes[mode] = false;
 
@@ -289,6 +318,11 @@ public void DownloadGlobalReplay_Callback(HTTPStatus status, DataPack dp, const 
 	else
 	{
 		FormatEx(sTrack, sizeof(sTrack), "奖励 %d", course);
+	}
+
+	if (--iRequestCounts == 0)
+	{
+		OnDownloadGlobalReplayDone();
 	}
 
 	GOKZ_PrintToChatAll(true, "{green}全球录像已下载成功 >> 赛道: %s | 模式: %s | 类型: %s", 

@@ -79,6 +79,27 @@ enum struct RunReplayHeader
 	int teleportsUsed;
 }
 
+enum struct replay_header_t
+{
+	GeneralReplayHeader general;
+	RunReplayHeader run;
+}
+
+enum struct replay_info_cache_t
+{
+	int course;
+	int mode;
+	int style;
+	int timeType;
+	bool global;
+}
+
+enum struct replay_playback_cache_t
+{
+	replay_header_t header;
+	ArrayList aFrames;
+}
+
 // NOTE: Make sure to change the RPDELTA_* enum, TickDataToArray() and TickDataFromArray() when adding/removing stuff from this!!!
 enum struct ReplayTickData
 {
@@ -108,8 +129,6 @@ enum struct ReplayTickData
 #define RP_MAGIC_NUMBER 0x676F6B7A
 #define RP_FORMAT_VERSION 0x02
 #define RP_NAV_FILE "maps/gokz-replays.nav"
-#define RP_V1_TICK_DATA_BLOCKSIZE 7
-#define RP_CACHE_BLOCKSIZE 5
 #define RP_MAX_BOTS 4
 #define RP_PLAYBACK_BREATHER_TIME 2.0
 #define RP_MIN_CHEATER_REPLAY_LENGTH 30 // 30 seconds

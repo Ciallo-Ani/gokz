@@ -13,7 +13,7 @@ static bool selectedGlobalReplay[MAXPLAYERS + 1];
 
 void DisplayReplayNetworkMenu(int client)
 {
-	if (g_ReplayInfoCache.Length == 0)
+	if (gA_ReplayInfoCache.Length == 0)
 	{
 		GOKZ_PrintToChat(client, true, "%t", "No Replays Found (Map)");
 		GOKZ_PlayErrorSound(client);
@@ -88,28 +88,37 @@ public int MenuHandler_Replay(Menu menu, MenuAction action, int param1, int para
 		char info[4];
 		menu.GetItem(param2, info, sizeof(info));
 		int replayIndex = StringToInt(info);
-		int replayInfo[RP_CACHE_BLOCKSIZE];
-		g_ReplayInfoCache.GetArray(replayIndex, replayInfo);
 
-		char path[PLATFORM_MAX_PATH];
-		BuildPath(Path_SM, path, sizeof(path),
-			"%s/%s/%d_%s_%s_%s%s.%s",
-			RP_DIRECTORY_RUNS, gC_CurrentMap, replayInfo[0], gC_ModeNamesShort[replayInfo[1]], gC_StyleNamesShort[replayInfo[2]], gC_TimeTypeNames[replayInfo[3]], selectedGlobalReplay[param1] ? "_GB" : "", RP_FILE_EXTENSION);
-		if (!FileExists(path))
+		replay_playback_cache_t playback_cache;
+		gA_PlaybackCache.GetArray(replayIndex, playback_cache, sizeof(replay_playback_cache_t));
+
+#if DEBUG
+		bool success = false;
+
+		if (playback_cache.aFrames == null)
 		{
-			// old replay path, ignore
-			BuildPath(Path_SM, path, sizeof(path),
-				"%s/%d_%s_%s_%s.%s",
-				RP_DIRECTORY, gC_CurrentMap, replayInfo[0], gC_ModeNamesShort[replayInfo[1]], gC_StyleNamesShort[replayInfo[2]], gC_TimeTypeNames[replayInfo[3]], RP_FILE_EXTENSION);
-			if (!FileExists(path))
-			{
-				LogError("Failed to load file: \"%s\".", path);
-				GOKZ_PrintToChat(param1, true, "%t", "Replay Menu - No File");
-				return 0;
-			}
+			GOKZ_PrintToChat(param1, true, "playback_cache.aFrame == null");
 		}
-		
-		LoadReplayBot(param1, path);
+		else if (playback_cache.aFrames.Length < 1)
+		{
+			GOKZ_PrintToChat(param1, true, "playback_cache.aFrame.Length < 1");
+		}
+		else
+		{
+			success = true;
+			LoadReplayBot(param1, playback_cache);
+		}
+
+		if (!success)
+		{
+			replay_info_cache_t info_cache;
+			gA_ReplayInfoCache.GetArray(replayIndex, info_cache, sizeof(replay_info_cache_t));
+			GOKZ_PrintToChat(param1, true, "course -> %d | mode -> %d | style -> %d | timeType -> %d | gb -> %d", 
+				info_cache.course, info_cache.mode, info_cache.style, info_cache.timeType, info_cache.global);
+		}
+#else
+		LoadReplayBot(param1, playback_cache);
+#endif
 	}
 	else if (action == MenuAction_Cancel)
 	{
@@ -155,35 +164,36 @@ static void DisplayReplayMenu(int client)
 static int ReplayMenuAddItems(int client, Menu menu)
 {
 	int replaysAdded = 0;
-	int replayCount = g_ReplayInfoCache.Length;
-	int replayInfo[RP_CACHE_BLOCKSIZE];
+	int replayCount = gA_ReplayInfoCache.Length;
 	char temp[32], indexString[4];
-	
+
 	menu.RemoveAllItems();
-	
+
 	for (int i = 0; i < replayCount; i++)
 	{
 		IntToString(i, indexString, sizeof(indexString));
-		g_ReplayInfoCache.GetArray(i, replayInfo);
 
-		 // Wrong mode or wrong global
-		if (replayInfo[1] != selectedReplayMode[client] || view_as<bool>(replayInfo[4]) != selectedGlobalReplay[client])
+		replay_info_cache_t info_cache;
+		gA_ReplayInfoCache.GetArray(i, info_cache, sizeof(replay_info_cache_t));
+
+		// Wrong mode or wrong global
+		if (info_cache.mode != selectedReplayMode[client] || info_cache.global != selectedGlobalReplay[client])
 		{
 			continue;
 		}
 		
-		if (replayInfo[0] == 0)
+		if (info_cache.course == 0)
 		{
-			FormatEx(temp, sizeof(temp), "Main %s", gC_TimeTypeNames[replayInfo[3]]);
+			FormatEx(temp, sizeof(temp), "Main %s", gC_TimeTypeNames[info_cache.timeType]);
 		}
 		else
 		{
-			FormatEx(temp, sizeof(temp), "Bonus %d %s", replayInfo[0], gC_TimeTypeNames[replayInfo[3]]);
+			FormatEx(temp, sizeof(temp), "Bonus %d %s", info_cache.course, gC_TimeTypeNames[info_cache.timeType]);
 		}
 		menu.AddItem(indexString, temp, ITEMDRAW_DEFAULT);
 		
 		replaysAdded++;
 	}
-	
+
 	return replaysAdded;
-} 
+}

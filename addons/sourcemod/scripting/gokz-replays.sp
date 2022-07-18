@@ -22,7 +22,8 @@
 #pragma newdecls required
 #pragma semicolon 1
 
-//#define DEBUG
+#define DEBUG 1
+//#define DEBUG2
 
 
 
@@ -37,12 +38,14 @@ public Plugin myinfo =
 
 #define UPDATER_URL GOKZ_UPDATER_BASE_URL..."gokz-replays.txt"
 
+ArrayList gA_ReplayInfoCache;
+ArrayList gA_PlaybackCache;
+
 bool gB_GOKZLocalDB;
 char gC_CurrentMap[64];
 int gI_CurrentMapFileSize;
 bool gB_HideNameChange;
 bool gB_NubRecordMissed[MAXPLAYERS + 1];
-ArrayList g_ReplayInfoCache;
 
 #include "gokz-replays/commands.sp"
 #include "gokz-replays/nav.sp"
@@ -129,6 +132,8 @@ public void OnConfigsExecuted()
 	FindConVar("bot_join_after_player").BoolValue = false;
 	FindConVar("bot_quota_mode").SetString("normal");
 	FindConVar("bot_quota").Flags &= ~(FCVAR_NOTIFY | FCVAR_REPLICATED);
+
+	ServerCommand("bot_kick");
 }
 
 public void OnEntityCreated(int entity, const char[] classname)

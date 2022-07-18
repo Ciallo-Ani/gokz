@@ -465,11 +465,7 @@ static bool SaveRecordingOfRun(char replayPath[PLATFORM_MAX_PATH], int client, i
 	if (FileExists(replayPath))
 	{
 		DeleteFile(replayPath);
-	}
-	else
-	{
-		AddToReplayInfoCache(course, generalHeader.mode, generalHeader.style, timeType);
-		SortReplayInfoCache();
+		RemoveReplayInfoFromCache(course, generalHeader.mode, generalHeader.style, timeType);
 	}
 
 	File file = OpenFile(replayPath, "wb");
@@ -489,6 +485,8 @@ static bool SaveRecordingOfRun(char replayPath[PLATFORM_MAX_PATH], int client, i
 	WriteTickData(file, client, ReplayType_Run);
 
 	delete file;
+
+	AddToReplayInfoCache(course, generalHeader.mode, generalHeader.style, timeType);
 
 	Call_OnReplaySaved(client, ReplayType_Run, gC_CurrentMap, course, timeType, time, replayPath);
 
