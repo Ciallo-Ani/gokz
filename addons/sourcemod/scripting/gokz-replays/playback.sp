@@ -49,21 +49,29 @@ static bool botIsTakeoff[RP_MAX_BOTS];
 
 // =====[ EVENTS ]=====
 
-void OnMapStart_PlayBack()
+void OnMapStart_InitPlaybackBots()
 {
-	ServerCommand("bot_kick");
-	RequestFrame(Frame_CreateUnusedBot);
+	CreateTimer(0.5, Timer_CreateUnusedBot);
 }
 
-void Frame_CreateUnusedBot()
+static Action Timer_CreateUnusedBot(Handle timer)
 {
 	int mid = RP_MAX_BOTS / 2;
 
 	for(int i = 0; i < RP_MAX_BOTS; i++)
 	{
-		botClient[i] = GOKZ_CreateBot(i < mid ? CS_TEAM_CT : CS_TEAM_T);
+		int team = i < mid ? CS_TEAM_CT : CS_TEAM_T;
+		botClient[i] = GOKZ_CreateBot(team);
+
+		if (GetClientTeam(botClient[i]) == CS_TEAM_NONE || GetClientTeam(botClient[i]) == CS_TEAM_SPECTATOR)
+		{
+			CS_SwitchTeam(botClient[i], team);
+		}
+
 		ResetBotNameAndTag(i);
 	}
+
+	return Plugin_Stop;
 }
 
 // =====[ PUBLIC ]=====

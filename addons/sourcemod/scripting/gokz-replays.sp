@@ -22,7 +22,7 @@
 #pragma newdecls required
 #pragma semicolon 1
 
-#define DEBUG 1
+#define DEBUG 0
 //#define DEBUG2
 
 
@@ -114,12 +114,16 @@ public void OnLibraryRemoved(const char[] name)
 
 public void OnMapStart()
 {
-	UpdateCurrentMap(); // Do first
+	if (!UpdateCurrentMap()) // Dont do update if this forward been called more than 1 times
+	{
+		return;
+	}
+
 	OnMapStart_Nav();
 	OnMapStart_Recording();
 	OnMapStart_ReplayCache();
 	OnMapStart_GlobalReplay();
-	OnMapStart_PlayBack();
+	OnMapStart_InitPlaybackBots();
 }
 
 public void OnConfigsExecuted()
@@ -288,10 +292,21 @@ static void HookEvents()
 	HookUserMessage(GetUserMessageId("SayText2"), Hook_SayText2, true);
 }
 
-static void UpdateCurrentMap()
+static bool UpdateCurrentMap()
 {
-	GetCurrentMapDisplayName(gC_CurrentMap, sizeof(gC_CurrentMap));
+	char sMap[64];
+	GetCurrentMapDisplayName(sMap, sizeof(sMap));
+
+	// if current map equals to `gC_CurrentMap`, dont update
+	if (!strcmp(sMap, gC_CurrentMap))
+	{
+		return false;
+	}
+
+	strcopy(gC_CurrentMap, sizeof(gC_CurrentMap), sMap);
 	gI_CurrentMapFileSize = GetCurrentMapFileSize();
+
+	return true;
 }
 
 

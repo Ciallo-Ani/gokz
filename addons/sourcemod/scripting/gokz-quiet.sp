@@ -71,7 +71,7 @@ public void OnAllPluginsLoaded()
 	{
 		if (IsClientInGame(client))
 		{
-			GOKZ_OnJoinTeam(client, GetClientTeam(client));
+			OnClientPutInServer(client);
 		}
 	}
 }
@@ -88,9 +88,11 @@ public void OnLibraryAdded(const char[] name)
 
 // =====[ CLIENT EVENTS ]=====
 
-public void GOKZ_OnJoinTeam(int client, int team)
+public void OnClientPutInServer(int client)
 {
-	OnJoinTeam_HidePlayers(client, team);
+	// Make sure client is only ever hooked once
+	SDKUnhook(client, SDKHook_SetTransmit, OnSetTransmitClient);
+	SDKHook(client, SDKHook_SetTransmit, OnSetTransmitClient);
 }
 
 public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float vel[3], const float angles[3], int weapon, int subtype, int cmdnum, int tickcount, int seed, const int mouse[2])
@@ -138,20 +140,9 @@ public void GOKZ_OnOptionChanged(int client, const char[] option, any newValue)
 
 // =====[ HIDE PLAYERS ]=====
 
-void OnJoinTeam_HidePlayers(int client, int team)
+static Action OnSetTransmitClient(int entity, int client)
 {
-	// Make sure client is only ever hooked once
-	SDKUnhook(client, SDKHook_SetTransmit, OnSetTransmitClient);
-	
-	if (team == CS_TEAM_T || team == CS_TEAM_CT)
-	{
-		SDKHook(client, SDKHook_SetTransmit, OnSetTransmitClient);
-	}
-}
-
-public Action OnSetTransmitClient(int entity, int client)
-{
-	if (GOKZ_GetOption(client, gC_QTOptionNames[QTOption_ShowPlayers]) == ShowPlayers_Disabled
+	if ((GOKZ_GetOption(client, gC_QTOptionNames[QTOption_ShowPlayers]) == ShowPlayers_Disabled || IsFakeClient(client))
 		 && entity != client
 		 && entity != GetObserverTarget(client))
 	{
@@ -160,7 +151,7 @@ public Action OnSetTransmitClient(int entity, int client)
 	return Plugin_Continue;
 }
 
-public Action Hook_NormalSound(int clients[MAXPLAYERS], int& numClients, char sample[PLATFORM_MAX_PATH], int& entity, int& channel, float& volume, int& level, int& pitch, int& flags, char soundEntry[PLATFORM_MAX_PATH], int& seed)
+static Action Hook_NormalSound(int clients[MAXPLAYERS], int& numClients, char sample[PLATFORM_MAX_PATH], int& entity, int& channel, float& volume, int& level, int& pitch, int& flags, char soundEntry[PLATFORM_MAX_PATH], int& seed)
 {
 	if (entity > MAXPLAYERS)
 	{
@@ -189,7 +180,7 @@ public Action Hook_NormalSound(int clients[MAXPLAYERS], int& numClients, char sa
 	return Plugin_Continue;
 }
 
-public Action Hook_ShotgunShot(const char[] te_name, const int[] players, int numClients, float delay)
+static Action Hook_ShotgunShot(const char[] te_name, const int[] players, int numClients, float delay)
 {
 	int newClients[MAXPLAYERS], newTotal = 0;
 	for (int i = 0; i < numClients; i++)

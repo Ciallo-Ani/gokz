@@ -94,8 +94,8 @@ static Action Timer_StartDownloadGlobalReplay(Handle timer)
 	{
 		iRequestCounts += 2;
 		// 主动加延时, 不然可能会触发429(send too many request)错误
-		CreateTimer(i * 1.5, Timer_GetRecordsTop_Nub, i);
-		CreateTimer(i * 3.0, Timer_GetRecordsTop_Pro, i);
+		CreateTimer((i + 1) * 1.5, Timer_GetRecordsTop_Nub, i);
+		CreateTimer((i + 1) * 3.0, Timer_GetRecordsTop_Pro, i);
 	}
 
 	return Plugin_Handled;
@@ -177,6 +177,7 @@ public void GetGlobalRecordsTop_Callback(HTTPResponse response, DataPack dp, con
 
 	int replayID = 0;
 	bool haveReplay[GOKZ_MAX_COURSES];
+	int count = 0;
 
 	for (int i = 0; i < top.Length; i++)
 	{
@@ -198,7 +199,8 @@ public void GetGlobalRecordsTop_Callback(HTTPResponse response, DataPack dp, con
 			cache.WriteCell(mode);
 			cache.WriteCell(type);
 
-			CreateTimer(i * 1.0, Timer_GetGlobalReplayByReplayID, cache);
+			CreateTimer(count * 1.0, Timer_GetGlobalReplayByReplayID, cache);
+			count++;
 		}
 
 		delete record;
@@ -298,6 +300,7 @@ public void DownloadGlobalReplay_Callback(HTTPStatus status, DataPack dp, const 
 		{
 			iRequestCounts--;
 			delete dp;
+			bDownloadingModes[mode] = false;
 			LogError("download replay failed! error: %s, status: %d", error, status);
 		}
 
