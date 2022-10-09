@@ -5,8 +5,6 @@
 
 #include <gokz/core>
 
-#include <autoexecconfig>
-
 #undef REQUIRE_EXTENSIONS
 #undef REQUIRE_PLUGIN
 #include <updater>
@@ -30,7 +28,6 @@ public Plugin myinfo =
 #define PLAYER_MODEL_CT "models/player/ctm_idf_variantc.mdl"
 #define PLAYER_MODEL_T_BOT "models/player/custom_player/legacy/tm_leet_varianta.mdl"
 #define PLAYER_MODEL_CT_BOT "models/player/custom_player/legacy/ctm_idf_variantc.mdl"
-ConVar gCV_gokz_player_models_alpha;
 ConVar gCV_sv_disable_immunity_alpha;
 
 
@@ -45,7 +42,8 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
-	CreateConVars();
+	gCV_sv_disable_immunity_alpha = FindConVar("sv_disable_immunity_alpha");
+
 	HookEvents();
 }
 
@@ -105,38 +103,6 @@ void HookEvents()
 
 
 
-// =====[ CONVARS ]=====
-
-void CreateConVars()
-{
-	AutoExecConfig_SetFile("gokz-playermodels", "sourcemod/gokz");
-	AutoExecConfig_SetCreateFile(true);
-	
-	gCV_gokz_player_models_alpha = AutoExecConfig_CreateConVar("gokz_player_models_alpha", "65", "Amount of alpha (transparency) to set player models to.", _, true, 0.0, true, 255.0);
-	gCV_gokz_player_models_alpha.AddChangeHook(OnConVarChanged);
-	
-	AutoExecConfig_ExecuteFile();
-	AutoExecConfig_CleanFile();
-	
-	gCV_sv_disable_immunity_alpha = FindConVar("sv_disable_immunity_alpha");
-}
-
-public void OnConVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
-{
-	if (convar == gCV_gokz_player_models_alpha)
-	{
-		for (int client = 1; client <= MaxClients; client++)
-		{
-			if (IsClientInGame(client) && IsPlayerAlive(client))
-			{
-				UpdatePlayerModelAlpha(client);
-			}
-		}
-	}
-}
-
-
-
 // =====[ PLAYER MODELS ]=====
 
 public void RequestFrame_UpdatePlayerModel(int userid)
@@ -177,14 +143,6 @@ public void RequestFrame_UpdatePlayerModel2(int userid)
 			}
 		}
 	}
-	
-	UpdatePlayerModelAlpha(client);
-}
-
-void UpdatePlayerModelAlpha(int client)
-{
-	SetEntityRenderMode(client, RENDER_TRANSCOLOR);
-	SetEntityRenderColor(client, _, _, _, gCV_gokz_player_models_alpha.IntValue);
 }
 
 void PrecachePlayerModels()

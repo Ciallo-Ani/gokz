@@ -15,10 +15,13 @@ static ArrayList playbackTickData[RP_MAX_BOTS];
 static bool inBreather[RP_MAX_BOTS];
 static float breatherStartTime[RP_MAX_BOTS];
 
+// Used in checking gokz bot index, depends on RP_MAX_BOTS.
+static int botIndex[MAXPLAYERS+1] = {-1, ...};
+
 // Original bot caller, needed for OnClientPutInServer callback
 static int botCaller[RP_MAX_BOTS];
 static bool botInUsed[RP_MAX_BOTS];
-static int botClient[RP_MAX_BOTS];
+static int botEntity[RP_MAX_BOTS];
 static bool botDataLoaded[RP_MAX_BOTS];
 static int botReplayType[RP_MAX_BOTS];
 static int botCourse[RP_MAX_BOTS];
@@ -47,34 +50,48 @@ static bool botIsTakeoff[RP_MAX_BOTS];
 
 
 
-// =====[ EVENTS ]=====
+// =====[ PUBLIC ]=====
 
-void OnMapStart_InitPlaybackBots()
+void CheckPlayBackBots()
 {
-	CreateTimer(0.5, Timer_CreateUnusedBot);
-}
-
-static Action Timer_CreateUnusedBot(Handle timer)
-{
-	int mid = RP_MAX_BOTS / 2;
-
 	for(int i = 0; i < RP_MAX_BOTS; i++)
 	{
-		int team = i < mid ? CS_TEAM_CT : CS_TEAM_T;
-		botClient[i] = GOKZ_CreateBot(team);
-
-		if (GetClientTeam(botClient[i]) == CS_TEAM_NONE || GetClientTeam(botClient[i]) == CS_TEAM_SPECTATOR)
+		if (IsValidBot(i))
 		{
-			CS_SwitchTeam(botClient[i], team);
+			continue;
 		}
 
-		ResetBotNameAndTag(i);
+		int team = i < (RP_MAX_BOTS / 2) ? CS_TEAM_CT : CS_TEAM_T;
+		int client = FindNearestBot();
+		bool shouldCreate = false;
+
+		if (client == -1)
+		{
+			client = GOKZ_CreateBot(team);
+			shouldCreate = true;
+		}
+
+		botEntity[i] = client;
+		botIndex[client] = i;
+
+		if (shouldCreate)
+		{
+			LogMessage("create bot \'%N\' as idx -> %d", client, i);
+
+			if (GetClientTeam(client) == CS_TEAM_NONE || 
+				GetClientTeam(client) == CS_TEAM_SPECTATOR)
+			{
+				CS_SwitchTeam(client, team);
+			}
+
+			ResetBotNameAndTag(i);
+		}
+		else
+		{
+			LogMessage("use bot %N as idx -> %d", client, i);
+		}
 	}
-
-	return Plugin_Stop;
 }
-
-// =====[ PUBLIC ]=====
 
 // Returns the client index of the replay bot, or -1 otherwise
 int LoadReplayBot(int client, replay_playback_cache_t cache)
@@ -82,7 +99,7 @@ int LoadReplayBot(int client, replay_playback_cache_t cache)
 	int bot;
 	if ((bot = GetUnusedBot(client)) != -1)
 	{
-		if (IsValidClient(botClient[bot]))
+		if (IsValidBot(bot))
 		{
 			botCaller[bot] = client;
 			RequestFrame(Frame_SetBotStuff, bot);
@@ -117,7 +134,7 @@ int LoadReplayBot(int client, replay_playback_cache_t cache)
 		return -1;
 	}
 
-	return botClient[bot];
+	return botEntity[bot];
 }
 
 // Passes the current state of the replay into the HUDInfo struct
@@ -126,7 +143,7 @@ void GetPlaybackState(int client, HUDInfo info)
 	int bot, i;
 	for(i = 0; i < RP_MAX_BOTS; i++)
 	{
-		bot = botClient[i] == client ? i : bot;
+		bot = botEntity[i] == client ? i : bot;
 	}
 	if (i == RP_MAX_BOTS + 1) return;
 	
@@ -157,7 +174,7 @@ void GetPlaybackState(int client, HUDInfo info)
 	info.Noclipping = false;
 	info.OnGround = Movement_GetOnGround(client);
 	info.Ducking = botButtons[bot] & IN_DUCK > 0;
-	info.ID = botClient[bot];
+	info.ID = botEntity[bot];
 	info.Jumped = botJumped[bot];
 	info.HitBhop = hitBhop[bot];
 	info.HitPerf = hitPerf[bot];
@@ -171,7 +188,7 @@ int GetBotFromClient(int client)
 {
 	for (int bot = 0; bot < RP_MAX_BOTS; bot++)
 	{
-		if (botClient[bot] == client)
+		if (botEntity[bot] == client)
 		{
 			return bot;
 		}
@@ -276,6 +293,26 @@ void OnClientPutInServer_Playback(int client)
 	}
 }
 
+void OnClientDisconnect_Playback(int client)
+{
+	if (!IsValidClient(client) || !IsFakeClient(client))
+	{
+		return;
+	}
+
+	for(int i = 0; i < RP_MAX_BOTS; i++)
+	{
+		if (botEntity[i] == client)
+		{
+			StopPlayBack(i);
+			botEntity[i] = -1;
+			botIndex[client] = -1;
+
+			break;
+		}
+	}
+}
+
 void OnPlayerRunCmd_Playback(int client, int &buttons)
 {
 	if (!IsFakeClient(client))
@@ -286,7 +323,7 @@ void OnPlayerRunCmd_Playback(int client, int &buttons)
 	for (int bot; bot < RP_MAX_BOTS; bot++)
 	{
 		// Check if not the bot we're looking for
-		if (!botInUsed[bot] || botClient[bot] != client || !botDataLoaded[bot] || 
+		if (!botInUsed[bot] || botEntity[bot] != client || !botDataLoaded[bot] || 
 			playbackTickData[bot] == null || playbackTickData[bot].Length < 1)
 		{
 			continue;
@@ -307,7 +344,7 @@ static void Frame_SetBotStuff(int bot)
 
 static Action Timer_SpectateMyBot(Handle timer, int bot)
 {
-	MakePlayerSpectate(botCaller[bot], botClient[bot]);
+	MakePlayerSpectate(botCaller[bot], botEntity[bot]);
 
 	return Plugin_Stop;
 }
@@ -489,12 +526,12 @@ void PlaybackVersion2(int client, int bot, int &buttons)
 		int spec;
 		for (spec = 1; spec < MAXPLAYERS + 1; spec++)
 		{
-			if (IsValidClient(spec) && GetObserverTarget(spec) == botClient[bot])
+			if (IsValidClient(spec) && GetObserverTarget(spec) == botEntity[bot])
 			{
 				break;
 			}
 		}
-		if (spec == MAXPLAYERS + 1 && !IsReplayBotControlled(bot, botClient[bot]))
+		if (spec == MAXPLAYERS + 1 && !IsReplayBotControlled(bot, botEntity[bot]))
 		{
 			StopPlayBack(bot);
 			return;
@@ -696,7 +733,7 @@ static void SetBotStuff(int bot)
 		return;
 	}
 
-	int client = botClient[bot];
+	int client = botEntity[bot];
 	
 	// Set its movement options just in case it could negatively affect the playback
 	GOKZ_SetCoreOption(client, Option_Mode, botMode[bot]);
@@ -781,7 +818,7 @@ static void SetBotClanTag(int bot)
 			gC_ModeNamesShort[botMode[bot]]);
 	}
 
-	CS_SetClientClanTag(botClient[bot], tag);
+	CS_SetClientClanTag(botEntity[bot], tag);
 }
 
 static void SetBotName(int bot)
@@ -817,7 +854,7 @@ static void SetBotName(int bot)
 	}
 	
 	gB_HideNameChange = true;
-	SetClientName(botClient[bot], name);
+	SetClientName(botEntity[bot], name);
 }
 
 // Returns the number of bots that are currently replaying
@@ -826,11 +863,17 @@ static int GetBotsInUse()
 	int botsInUse = 0;
 	for (int bot = 0; bot < RP_MAX_BOTS; bot++)
 	{
+		if (!IsValidBot(bot))
+		{
+			continue;
+		}
+
 		if (botInUsed[bot] && botDataLoaded[bot])
 		{
 			botsInUse++;
 		}
 	}
+
 	return botsInUse;
 }
 
@@ -839,6 +882,12 @@ static int GetUnusedBot(int client = -1)
 {
 	for (int bot = 0; bot < RP_MAX_BOTS; bot++)
 	{
+		if (!IsValidBot(bot))
+		{
+			continue;
+		}
+
+		// bot is used by caller, the caller want to playback another, do his previous bot.
 		if (botInUsed[bot] && botCaller[bot] == client && client != -1)
 		{
 			return bot;
@@ -850,6 +899,7 @@ static int GetUnusedBot(int client = -1)
 			return bot;
 		}
 	}
+
 	return -1;
 }
 
@@ -859,7 +909,7 @@ static void PlaybackSkipToTick(int bot, int tick)
 	ReplayTickData currentTickData;
 	playbackTickData[bot].GetArray(tick, currentTickData);
 
-	TeleportEntity(botClient[bot], currentTickData.origin, currentTickData.angles, view_as<float>( { 0.0, 0.0, 0.0 } ));
+	TeleportEntity(botEntity[bot], currentTickData.origin, currentTickData.angles, view_as<float>( { 0.0, 0.0, 0.0 } ));
 
 	int direction = tick < playbackTick[bot] ? -1 : 1;
 	for (int i = playbackTick[bot]; i != tick; i += direction)
@@ -901,7 +951,7 @@ static void PlaybackSkipToTick(int bot, int tick)
 		PrintToServer("==============================================================");
 	#endif
 
-	Movement_SetMovetype(botClient[bot], MOVETYPE_NOCLIP);
+	Movement_SetMovetype(botEntity[bot], MOVETYPE_NOCLIP);
 	playbackTick[bot] = tick;
 }
 
@@ -919,7 +969,12 @@ static void MakePlayerSpectate(int client, int bot)
 		return;
 	}
 
-	GOKZ_JoinTeam(client, CS_TEAM_SPECTATOR);
+	if (GetClientTeam(client) == CS_TEAM_CT ||
+		GetClientTeam(client) == CS_TEAM_T)
+	{
+		GOKZ_JoinTeam(client, CS_TEAM_SPECTATOR);
+	}
+
 	SetEntProp(client, Prop_Send, "m_iObserverMode", 4);
 	SetEntPropEnt(client, Prop_Send, "m_hObserverTarget", bot);
 
@@ -941,6 +996,7 @@ static void StopPlayBack(int bot)
 	delete playbackTickData[bot];
 	botInUsed[bot] = false;
 	botDataLoaded[bot] = false;
+	botCaller[bot] = -1;
 	CancelReplayControlsForBot(bot);
 	ResetBotNameAndTag(bot);
 }
@@ -948,6 +1004,24 @@ static void StopPlayBack(int bot)
 static void ResetBotNameAndTag(int bot)
 {
 	gB_HideNameChange = true;
-	SetClientName(botClient[bot], IntToStringEx(bot));
-	CS_SetClientClanTag(botClient[bot], "!replay");
+	SetClientName(botEntity[bot], IntToStringEx(bot));
+	CS_SetClientClanTag(botEntity[bot], "!replay");
+}
+
+static bool IsValidBot(int bot)
+{
+	return IsValidClient(botEntity[bot]) && IsFakeClient(botEntity[bot]);
+}
+
+static int FindNearestBot()
+{
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (IsValidClient(i) && IsFakeClient(i) && botIndex[i] == -1)
+		{
+			return i;
+		}
+	}
+
+	return -1;
 }

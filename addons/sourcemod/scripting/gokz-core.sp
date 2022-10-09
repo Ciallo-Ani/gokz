@@ -68,6 +68,7 @@ ConVar gCV_sv_full_alltalk;
 #include "gokz-core/triggerfix.sp"
 #include "gokz-core/demofix.sp"
 #include "gokz-core/teamnumfix.sp"
+#include "gokz-core/weapon.sp"
 
 #include "gokz-core/map/buttons.sp"
 #include "gokz-core/map/triggers.sp"
@@ -183,6 +184,7 @@ public void OnClientDisconnect(int client)
 {
 	OnClientDisconnect_Timer(client);
 	OnClientDisconnect_ValidJump(client);
+	OnClientDisconnect_Weapon(client);
 }
 
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2])
@@ -284,6 +286,11 @@ public void OnCSPlayerSpawnPost(int client)
 public void OnClientPreThinkPost(int client)
 {
 	OnClientPreThinkPost_UseButtons(client);
+}
+
+public void OnWeaponDrop(int client, int entity)
+{
+	OnWeaponDrop_ClearWeapon(entity);
 }
 
 public void Movement_OnChangeMovetype(int client, MoveType oldMovetype, MoveType newMovetype)
@@ -518,6 +525,7 @@ static void HookClientEvents(int client)
 	DHookEntity(gH_DHooks_SetModel, true, client);
 	SDKHook(client, SDKHook_SpawnPost, OnCSPlayerSpawnPost);
 	SDKHook(client, SDKHook_PreThinkPost, OnClientPreThinkPost);
+	SDKHook(client, SDKHook_WeaponDrop, OnWeaponDrop);
 }
 
 static void UpdateTrackingVariables(int client, int cmdnum, int buttons)

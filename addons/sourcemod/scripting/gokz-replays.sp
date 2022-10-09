@@ -7,12 +7,12 @@
 #include <movementapi>
 
 #include <gokz/core>
-#include <gokz/global>
-#include <gokz/localranks>
 #include <gokz/replays>
 
 #undef REQUIRE_EXTENSIONS
 #undef REQUIRE_PLUGIN
+#include <gokz/global>
+#include <gokz/localranks>
 #include <gokz/hud>
 #include <gokz/jumpstats>
 #include <gokz/localdb>
@@ -123,7 +123,8 @@ public void OnMapStart()
 	OnMapStart_Recording();
 	OnMapStart_ReplayCache();
 	OnMapStart_GlobalReplay();
-	OnMapStart_InitPlaybackBots();
+
+	CreateTimer(5.0, Timer_CheckBots);
 }
 
 public void OnConfigsExecuted()
@@ -135,8 +136,6 @@ public void OnConfigsExecuted()
 	FindConVar("bot_chatter").SetString("off");
 	FindConVar("bot_zombie").BoolValue = true;
 	FindConVar("bot_join_after_player").BoolValue = false;
-	FindConVar("bot_quota_mode").SetString("normal");
-	FindConVar("bot_quota").Flags &= ~(FCVAR_NOTIFY | FCVAR_REPLICATED);
 }
 
 public void OnEntityCreated(int entity, const char[] classname)
@@ -202,6 +201,7 @@ public void OnClientAuthorized(int client, const char[] auth)
 
 public void OnClientDisconnect(int client)
 {
+	OnClientDisconnect_Playback(client);
 	OnClientDisconnect_Recording(client);
 }
 
@@ -362,4 +362,11 @@ void TickDataFromArray(any array[sizeof(ReplayTickData)], ReplayTickData result)
 	result.packetsPerSecond    = array[17];
 	result.laggedMovementValue = array[18];
 	result.buttonsForced       = array[19];
+}
+
+static Action Timer_CheckBots(Handle timer)
+{
+	CheckPlayBackBots();
+
+	return Plugin_Stop;
 }
