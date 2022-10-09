@@ -300,6 +300,10 @@
 	{
 		"en"		"Timer button/zone type"
 	}
+	"Options Menu - Button Through Players"
+	{
+		"en"		"Press button through players"
+	}
 	"Options Menu - Safeguard"
 	{
 		"en"		"Run safeguard"
