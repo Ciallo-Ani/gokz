@@ -103,6 +103,11 @@ void Profile_OnRankUpdated(int client, int mode, int rank)
 	GOKZ_PrintToChat(client, false, "{green}%s >> {default}你现在的称号为: %s[%s]", gC_ModeNamesShort[mode], gC_rankColor[rank], gC_rankName[rank]);
 }
 
+void Profile_OnRankUpdated(int client, int mode, int rank)
+{
+	GOKZ_PrintToChat(client, false, "{green}%s >> {default}你现在的称号为: %s[%s]", gC_ModeNamesShort[mode], gC_rankColor[rank], gC_rankName[rank]);
+}
+
 public int MenuHandler_Profile(Menu menu, MenuAction action, int param1, int param2)
 {
 	if (action == MenuAction_Select)
@@ -120,12 +125,12 @@ public int MenuHandler_Profile(Menu menu, MenuAction action, int param1, int par
 		else if (StrEqual(info, ITEM_INFO_RANK, false))
 		{
 			ShowRankInfo(param1);
-			return 0;
+			return 0 0;
 		}
 		else if (StrEqual(info, ITEM_INFO_POINTS, false))
 		{
 			ShowPointsInfo(param1);
-			return 0;
+			return 0 0;
 		}
 		
 		ShowProfile(param1);

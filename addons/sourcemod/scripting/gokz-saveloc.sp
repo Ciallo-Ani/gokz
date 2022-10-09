@@ -9,7 +9,7 @@
 #undef REQUIRE_EXTENSIONS
 #undef REQUIRE_PLUGIN
 #include <updater>
-
+#include <gokz/hud>
 #pragma newdecls required
 #pragma semicolon 1
 
@@ -98,6 +98,13 @@ enum struct Location {
 
 	bool Load(int client)
 	{
+		// Safeguard Check
+		if (GOKZ_GetCoreOption(client, Option_Safeguard) > Safeguard_Disabled && GOKZ_GetTimerRunning(client) && GOKZ_GetValidTimer(client))
+		{
+			GOKZ_PrintToChat(client, true, "%t", "Safeguard - Blocked");
+			GOKZ_PlayErrorSound(client);
+			return false;
+		}
 		if (!GOKZ_SetMode(client, this.mode))
 		{
 			GOKZ_PrintToChat(client, true, "%t", "LoadLoc - Mode Not Available");
@@ -138,7 +145,7 @@ bool gB_LocMenuOpen[MAXPLAYERS + 1];
 bool gB_UsedLoc[MAXPLAYERS + 1];
 int gI_MostRecentLocation[MAXPLAYERS + 1];
 
-
+bool gB_GOKZHUD;
 
 // =====[ PLUGIN EVENTS ]=====
 
@@ -150,6 +157,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
+	LoadTranslations("gokz-common.phrases");
 	LoadTranslations("gokz-saveloc.phrases");
 	
 	HookEvents();
@@ -163,6 +171,7 @@ public void OnAllPluginsLoaded()
 	{
 		Updater_AddPlugin(UPDATER_URL);
 	}
+	gB_GOKZHUD = LibraryExists("gokz-hud");
 }
 
 public void OnLibraryAdded(const char[] name)
@@ -171,6 +180,12 @@ public void OnLibraryAdded(const char[] name)
 	{
 		Updater_AddPlugin(UPDATER_URL);
 	}
+	gB_GOKZHUD = gB_GOKZHUD || StrEqual(name, "gokz-hud");
+}
+
+public void OnLibraryRemoved(const char[] name)
+{
+	gB_GOKZHUD = gB_GOKZHUD && !StrEqual(name, "gokz-hud");
 }
 
 public void OnMapStart()
@@ -610,6 +625,14 @@ bool LoadLocation(int client, int id)
 	if (loc.Load(client))
 	{
 		gB_UsedLoc[client] = true;
+		if (gB_GOKZHUD)
+		{
+			GOKZ_HUD_ForceUpdateTPMenu(client);
+		}
+	}
+	else
+	{
+		return false;
 	}
 	// print message if loading new location
 	if (gI_MostRecentLocation[client] != id)

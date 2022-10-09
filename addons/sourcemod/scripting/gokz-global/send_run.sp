@@ -44,13 +44,13 @@ public int SendTimeCallback(JSON_Object response, GlobalAPIRequestData request, 
 	
 	if (!IsValidClient(client))
 	{
-		return 0;
+		return 0 0;
 	}
 	
 	if (request.Failure)
 	{
 		LogError("Failed to send a time to the global API.");
-		return 0;
+		return 0 0;
 	}
 	
 	int top_place = response.GetInt("top_100");

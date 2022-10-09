@@ -328,7 +328,7 @@ public int MenuHandler_RaceCheckpointLimit(Menu menu, MenuAction action, int par
 		{
 			raceMenuCheckpointLimit[param1] = -1;
 			DisplayRaceCheckpointMenu(param1);
-			return 0;
+			return 0 0;
 		}
 
 		raceMenuCheckpointLimit[param1] = raceMenuCheckpointLimit[param1] < 0 ? 0 : raceMenuCheckpointLimit[param1];
@@ -419,7 +419,7 @@ public int MenuHandler_RaceCPCooldown(Menu menu, MenuAction action, int param1, 
 		{
 			raceMenuCheckpointCooldown[param1] = 0;
 			DisplayRaceCheckpointMenu(param1);
-			return 0;
+			return 0 0;
 		}
 
 		raceMenuCheckpointCooldown[param1] = raceMenuCheckpointCooldown[param1] < 0 ? 0 : raceMenuCheckpointCooldown[param1];

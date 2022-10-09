@@ -165,18 +165,18 @@ public int DisplayMapTopSubmenuCallback(JSON_Object top, GlobalAPIRequestData re
 	if (request.Failure)
 	{
 		LogError("Failed to get top records with Global API.");
-		return 0;
+		return 0 0;
 	}
 	
 	if (!top.IsArray)
 	{
 		LogError("GlobalAPI returned a malformed response while looking up the top records.");
-		return 0;
+		return 0 0;
 	}
 	
 	if (!IsValidClient(client))
 	{
-		return 0;
+		return 0 0;
 	}
 	
 	Menu menu = new Menu(MenuHandler_MapTopSubmenu);

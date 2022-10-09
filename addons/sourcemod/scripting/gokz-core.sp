@@ -48,6 +48,7 @@ int gI_WEAPONTYPE_UNKNOWN = 123123123;
 int gI_LatestClient = -1;
 
 int gI_CmdNum[MAXPLAYERS + 1];
+int gI_TickCount[MAXPLAYERS + 1];
 bool gB_OldOnGround[MAXPLAYERS + 1];
 int gI_OldButtons[MAXPLAYERS + 1];
 int gI_TeleportCmdNum[MAXPLAYERS + 1];
@@ -59,8 +60,6 @@ ConVar gCV_gokz_chat_prefix;
 ConVar gCV_sv_full_alltalk;
 
 #include "gokz-core/commands.sp"
-#include "gokz-core/forwards.sp"
-#include "gokz-core/natives.sp"
 #include "gokz-core/modes.sp"
 #include "gokz-core/misc.sp"
 #include "gokz-core/options.sp"
@@ -84,6 +83,9 @@ ConVar gCV_sv_full_alltalk;
 #include "gokz-core/timer/pause.sp"
 #include "gokz-core/timer/timer.sp"
 #include "gokz-core/timer/virtual_buttons.sp"
+
+#include "gokz-core/forwards.sp"
+#include "gokz-core/natives.sp"
 
 
 
@@ -190,7 +192,9 @@ public void OnClientDisconnect(int client)
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2])
 {
 	gI_CmdNum[client] = cmdnum;
+	gI_TickCount[client] = tickcount;
 	OnPlayerRunCmd_MapTriggers(client, buttons);
+	OnPlayerRunCmd_Turnbinds(client, buttons, tickcount, angles);
 	return Plugin_Continue;
 }
 
@@ -258,6 +262,12 @@ public Action OnPlayerDeath(Event event, const char[] name, bool dontBroadcast) 
 		OnPlayerDeath_TeamNumber(client);
 	}
 	return Plugin_Continue;
+}
+
+public void OnPlayerJump(Event event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(event.GetInt("userid"));
+	OnPlayerJump_Triggers(client);
 }
 
 public MRESReturn DHooks_OnTeleport(int client, Handle params)
@@ -497,6 +507,7 @@ static void HookEvents()
 	HookEvent("player_spawn", OnPlayerSpawn, EventHookMode_Post);
 	HookEvent("player_team", OnPlayerJoinTeam, EventHookMode_Pre);
 	HookEvent("player_death", OnPlayerDeath, EventHookMode_Pre);
+	HookEvent("player_jump", OnPlayerJump);
 	HookEvent("round_start", OnRoundStart, EventHookMode_PostNoCopy);
 	AddNormalSoundHook(OnNormalSound);
 	

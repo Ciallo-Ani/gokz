@@ -54,6 +54,12 @@ void EnableNoclip(int client)
 {
 	if (IsValidClient(client) && IsPlayerAlive(client))
 	{
+		if (GOKZ_GetCoreOption(client, Option_Safeguard) > Safeguard_Disabled && GOKZ_GetTimerRunning(client) && GOKZ_GetValidTimer(client))
+		{
+			GOKZ_PrintToChat(client, true, "%t", "Safeguard - Blocked");
+			GOKZ_PlayErrorSound(client);
+			return;
+		}
 		Movement_SetMovetype(client, MOVETYPE_NOCLIP);
 		GOKZ_StopTimer(client);
 	}
@@ -88,6 +94,12 @@ void EnableNoclipNotrigger(int client)
 {
 	if (IsValidClient(client) && IsPlayerAlive(client))
 	{
+		if (GOKZ_GetCoreOption(client, Option_Safeguard) > Safeguard_Disabled && GOKZ_GetTimerRunning(client) && GOKZ_GetValidTimer(client))
+		{
+			GOKZ_PrintToChat(client, true, "%t", "Safeguard - Blocked");
+			GOKZ_PlayErrorSound(client);
+			return;
+		}
 		Movement_SetMovetype(client, MOVETYPE_NOCLIP);
 		SetEntProp(client, Prop_Send, "m_CollisionGroup", GOKZ_COLLISION_GROUP_NOTRIGGER);
 		GOKZ_StopTimer(client);
@@ -137,6 +149,47 @@ bool JustNoclipped(int client)
 void OnClientPutInServer_Noclip(int client)
 {
 	noclipReleaseTime[client] = 0;
+}
+
+// =====[ TURNBINDS ]=====
+
+int turnbindsLastLeftStart[MAXPLAYERS + 1];
+int turnbindsLastRightStart[MAXPLAYERS + 1];
+float turnbindsLastValidYaw[MAXPLAYERS + 1];
+int turnbindsOldButtons[MAXPLAYERS + 1];
+
+// Ensures that there is a minimum time between starting to turnbind in one direction
+// and then starting to turnbind in the other direction
+void OnPlayerRunCmd_Turnbinds(int client, int buttons, int tickcount, float angles[3])
+{
+	if (buttons & IN_LEFT && tickcount < turnbindsLastRightStart[client] + GOKZ_TURNBIND_COOLDOWN)
+	{
+		angles[1] = turnbindsLastValidYaw[client];
+		TeleportEntity(client, NULL_VECTOR, angles, NULL_VECTOR);
+		buttons = 0;
+	}
+	else if (buttons & IN_RIGHT && tickcount < turnbindsLastLeftStart[client] + GOKZ_TURNBIND_COOLDOWN)
+	{
+		angles[1] = turnbindsLastValidYaw[client];
+		TeleportEntity(client, NULL_VECTOR, angles, NULL_VECTOR);
+		buttons = 0;
+	}
+	else
+	{
+		turnbindsLastValidYaw[client] = angles[1];
+		
+		if (!(turnbindsOldButtons[client] & IN_LEFT) && (buttons & IN_LEFT))
+		{
+			turnbindsLastLeftStart[client] = tickcount;
+		}
+		
+		if (!(turnbindsOldButtons[client] & IN_RIGHT) && (buttons & IN_RIGHT))
+		{
+			turnbindsLastRightStart[client] = tickcount;
+		}
+		
+		turnbindsOldButtons[client] = buttons;
+	}
 }
 
 
@@ -296,7 +349,14 @@ void JoinTeam(int client, int newTeam, bool restorePos)
 	}
 }
 
-
+void SendFakeTeamEvent(int client)
+{
+	// Send a fake event to close the team menu
+	Event event = CreateEvent("player_team");
+	event.SetInt("userid", GetClientUserId(client));
+	event.FireToClient(client);
+	event.Cancel();
+}
 
 // =====[ VALID JUMP TRACKING ]=====
 
@@ -531,174 +591,4 @@ void OnMapStart_FixMissingSpawns()
 			TeleportEntity(newSpawn, origin, angles, NULL_VECTOR);
 		}
 	}
-}
-
-// =====[ BUTTONS ]=====
-
-void OnClientPreThinkPost_UseButtons(int client)
-{
-	if (GetEntProp(client, Prop_Data, "m_afButtonPressed") & IN_USE)
-	{
-		int entity = FindUseEntity(client);
-		if (entity != -1)
-		{
-			AcceptEntityInput(entity, "Use", client, client, 1);
-		}
-	}
-}
-
-static int FindUseEntity(int client)
-{
-	float fwd[3];
-	float angles[3];
-	GetClientEyeAngles(client, angles);
-	GetAngleVectors(angles, fwd, NULL_VECTOR, NULL_VECTOR);
-
-	Handle trace;
-
-	float eyeOrigin[3];
-	GetClientEyePosition(client, eyeOrigin);
-	int useableContents = (MASK_NPCSOLID_BRUSHONLY | MASK_OPAQUE_AND_NPCS) & ~CONTENTS_OPAQUE;
-
-	float endpos[3];
-
-	// Check if +use trace collide with a player first, so we don't activate any button twice
-	trace = TR_TraceRayFilterEx(eyeOrigin, angles, useableContents, RayType_Infinite, TRFOtherPlayersOnly, client);
-	if (TR_DidHit(trace))
-	{
-		int ent = TR_GetEntityIndex(trace);
-		if (ent < 1 || ent > MaxClients)
-		{
-			return -1;
-		}
-		// Search for a button behind it.
-		trace = TR_TraceRayFilterEx(eyeOrigin, angles, useableContents, RayType_Infinite, TraceEntityFilterPlayers);
-		if (TR_DidHit(trace))
-		{
-			char buffer[20];
-			ent = TR_GetEntityIndex(trace);
-			// Make sure that it is a button, and this button activates when pressed.
-			// If it is not a button, check its parent to see if it is a button.
-			bool isButton;
-			while (ent != -1)
-			{
-				GetEntityClassname(ent, buffer, sizeof(buffer));
-				if (StrEqual("func_button", buffer, false) && GetEntProp(ent, Prop_Data, "m_spawnflags") & SF_BUTTON_USE_ACTIVATES)
-				{
-					isButton = true;
-					break;
-				}
-				else
-				{
-					ent = GetEntPropEnt(ent, Prop_Data, "m_hMoveParent");
-				}
-			}
-			if (isButton)
-			{
-				TR_GetEndPosition(endpos, trace);
-				float delta[3];
-				for (int i = 0; i < 2; i++)
-				{
-					delta[i] = endpos[i] - eyeOrigin[i];
-				}
-				// Z distance is treated differently.
-				float m_vecMins[3];
-				float m_vecMaxs[3];
-				float m_vecOrigin[3];
-				GetEntPropVector(ent, Prop_Send, "m_vecOrigin", m_vecOrigin);
-				GetEntPropVector(ent, Prop_Send, "m_vecMins", m_vecMins);
-				GetEntPropVector(ent, Prop_Send, "m_vecMaxs", m_vecMaxs);
-
-				delta[2] = IntervalDistance(endpos[2], m_vecOrigin[2] + m_vecMins[2], m_vecOrigin[2] + m_vecMaxs[2]);
-				if (GetVectorLength(delta) < 80.0)
-				{
-					return ent;
-				}
-			}
-		}
-	}
-	// This is 1.11 only.
-	/*
-	float nearestPoint[3];
-	float nearestDist = FLOAT_MAX;
-	ArrayList entities;
-	TR_EnumerateEntitiesSphere(eyeOrigin, 80.0, 0, AddEntities, entities);
-	for (int i = 0; i < entities.Length; i++)
-	{
-		char buffer[64];
-		int ent = entities.Get(i);
-		GetEntityClassname(ent, buffer, sizeof(buffer));
-		if (StrEqual("func_button", buffer, false) && GetEntProp(entity, Prop_Data, "m_spawnflags") & SF_BUTTON_USE_ACTIVATES)
-		{
-			float point[3];
-			CalcNearestPoint(ent, eyeOrigin, point);
-						
-			float dir[3];
-			for (int j = 0; j < 3; j++)
-			{
-				dir[j] = point[j] - eyeOrigin[2];
-			}
-
-			float minimumDot = GetEntPropFloat(ent, Prop_Send, "m_flUseLookAtAngle");
-			float dot = GetVectorDotProduct(dir, fwd);
-			if (dot < minimumDot)
-			{
-				continue;
-			}
-
-			float dist = CalcDistanceToLine(point, eyeOrigin, fwd);
-			if (dist < nearestDist)
-			{
-				trace = TR_TraceRayFilterEx(eyeOrigin, point, useableContents, RayType_EndPoint, TraceEntityFilterPlayers);
-				if (TR_GetFraction(trace) == 1.0 || TR_GetEntityIndex(trace) == ent)
-				{
-					CopyVector(point, nearestPoint);
-					entity = ent;
-					nearestDist = dist;
-				}
-			}
-		}
-	}
-	// We found the closest button, but we still need to check if there is a player in front of it or not.
-	// In the case that there isn't a player inbetween, we don't return the entity index, because that button will be pressed by the game function anyway.
-	// If there is, we will press two buttons at once, the "right" button found by this function and the "wrong" button that we only happen to press because
-	// there is a player in the way.
-	
-	trace = TR_TraceRayFilterEx(eyeOrigin, nearestPoint, useableContents, RayType_EndPoint, TRFOtherPlayersOnly);
-	if (TR_DidHit(trace))
-	{
-		return -1;
-	}
-	*/
-	return -1; 
-}
-
-public bool AddEntities(int entity, ArrayList entities)
-{
-	entities.Push(entity);
-	return true;
-}
-
-static float IntervalDistance(float x, float x0, float x1)
-{
-	if (x0 > x1)
-	{
-		float tmp = x0;
-		x0 = x1;
-		x1 = tmp;
-	}
-	if (x < x0)
-	{
-		return x0 - x;
-	}
-	else if (x > x1)
-	{
-		return x - x1;
-	}
-	return 0.0;
-}
-// TraceRay filter for other players exclusively.
-public bool TRFOtherPlayersOnly(int entity, int contentmask, int client)
-{
-	return (0 < entity <= MaxClients) && (entity != client);
 }
