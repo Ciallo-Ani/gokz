@@ -604,7 +604,7 @@ public void GetAuthStatusCallback(JSON_Object auth_json, GlobalAPIRequestData re
 	if (request.Failure)
 	{
 		LogError("Failed to check API key with Global API.");
-		return 0;
+		return;
 	}
 	
 	APIAuth auth = view_as<APIAuth>(auth_json);
@@ -613,7 +613,7 @@ public void GetAuthStatusCallback(JSON_Object auth_json, GlobalAPIRequestData re
 		LogError("Global API key was found to be missing or invalid.");
 	}
 	gB_APIKeyCheck = auth.IsValid;
-	return 0;
+	return;
 }
 
 public void GetModeInfoCallback(JSON_Object modes, GlobalAPIRequestData request)
@@ -621,13 +621,13 @@ public void GetModeInfoCallback(JSON_Object modes, GlobalAPIRequestData request)
 	if (request.Failure)
 	{
 		LogError("Failed to check mode versions with Global API.");
-		return 0;
+		return;
 	}
 	
 	if (!modes.IsArray)
 	{
 		LogError("GlobalAPI returned a malformed response while looking up the modes.");
-		return 0;
+		return;
 	}
 	
 	for (int i = 0; i < modes.Length; i++)
@@ -652,7 +652,7 @@ public void GetModeInfoCallback(JSON_Object modes, GlobalAPIRequestData request)
 				gC_ModeNames[mode_id], mode.LatestVersion, desc, GOKZ_GetModeVersion(mode_id), GOKZ_VERSION);
 		}
 	}
-	return 0;
+	return;
 }
 
 public void GetMapCallback(JSON_Object map_json, GlobalAPIRequestData request)
@@ -660,7 +660,7 @@ public void GetMapCallback(JSON_Object map_json, GlobalAPIRequestData request)
 	if (request.Failure || map_json == INVALID_HANDLE)
 	{
 		LogError("Failed to get map info.");
-		return 0;
+		return;
 	}
 	
 	APIMap map = view_as<APIMap>(map_json);
@@ -678,7 +678,7 @@ public void GetMapCallback(JSON_Object map_json, GlobalAPIRequestData request)
 			UpdatePoints(client);
 		}
 	}
-	return 0;
+	return;
 }
 
 void CheckClientGlobalBan(int client)

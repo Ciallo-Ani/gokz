@@ -125,12 +125,12 @@ public int MenuHandler_Profile(Menu menu, MenuAction action, int param1, int par
 		else if (StrEqual(info, ITEM_INFO_RANK, false))
 		{
 			ShowRankInfo(param1);
-			return 0 0;
+			return 0;
 		}
 		else if (StrEqual(info, ITEM_INFO_POINTS, false))
 		{
 			ShowPointsInfo(param1);
-			return 0 0;
+			return 0;
 		}
 		
 		ShowProfile(param1);

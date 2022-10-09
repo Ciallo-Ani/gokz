@@ -57,12 +57,12 @@ public int PrintRecordsCallback(JSON_Object records, GlobalAPIRequestData reques
 	if (request.Failure)
 	{
 		LogError("Failed to retrieve record from the Global API for printing.");
-		return 0 0;
+		return 0;
 	}
 	
 	if (!IsValidClient(client))
 	{
-		return 0 0;
+		return 0;
 	}
 	
 	if (records.Length <= 0)

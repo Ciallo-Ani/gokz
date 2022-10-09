@@ -311,7 +311,7 @@ public int MenuHandler_DuelCheckpointLimit(Menu menu, MenuAction action, int par
 		{
 			duelMenuCheckpointLimit[param1] = -1;
 			DisplayDuelCheckpointMenu(param1);
-			return 0 0;
+			return 0;
 		}
 
 		duelMenuCheckpointLimit[param1] = duelMenuCheckpointLimit[param1] < 0 ? 0 : duelMenuCheckpointLimit[param1];
@@ -402,7 +402,7 @@ public int MenuHandler_DuelCPCooldown(Menu menu, MenuAction action, int param1, 
 		{
 			duelMenuCheckpointCooldown[param1] = 0;
 			DisplayDuelCheckpointMenu(param1);
-			return 0 0;
+			return 0;
 		}
 
 		duelMenuCheckpointCooldown[param1] = duelMenuCheckpointCooldown[param1] < 0 ? 0 : duelMenuCheckpointCooldown[param1];
