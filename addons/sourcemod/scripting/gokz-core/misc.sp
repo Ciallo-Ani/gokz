@@ -519,8 +519,7 @@ public Action Timer_TimeLimit(Handle timer)
 public Action Timer_EndRound(Handle timer)
 {
 	CS_TerminateRound(1.0, CSRoundEnd_Draw, true);
-
-	return Plugin_Stop;
+	return Plugin_Continue;
 }
 
 
@@ -590,5 +589,25 @@ void OnMapStart_FixMissingSpawns()
 		{
 			TeleportEntity(newSpawn, origin, angles, NULL_VECTOR);
 		}
+	}
+}
+
+
+// =====[ SAFE MODE ]=====
+
+void ToggleSafeGuard(int client)
+{
+	GOKZ_SetCoreOption(client, Option_Safeguard, (GOKZ_GetCoreOption(client, Option_Safeguard) + 1) % SAFEGUARD_COUNT);
+}
+
+void ToggleProSafeGuard(int client)
+{
+	if (GOKZ_GetCoreOption(client, Option_Safeguard) == Safeguard_EnabledPRO)
+	{
+		GOKZ_SetCoreOption(client, Option_Safeguard, Safeguard_Disabled);
+	}
+	else
+	{
+		GOKZ_SetCoreOption(client, Option_Safeguard, Safeguard_EnabledPRO);
 	}
 }

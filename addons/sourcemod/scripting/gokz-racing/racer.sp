@@ -28,7 +28,6 @@ Action OnTimerStart_Racer(int client, int course)
 void OnTimerStart_Post_Racer(int client)
 {
 	lastTimerStartTime[client] = GetGameTime();
-	return Plugin_Continue;
 }
 
 Action OnMakeCheckpoint_Racer(int client)

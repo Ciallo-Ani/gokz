@@ -293,11 +293,6 @@ public void OnCSPlayerSpawnPost(int client)
 	}
 }
 
-public void OnClientPreThinkPost(int client)
-{
-	OnClientPreThinkPost_UseButtons(client);
-}
-
 public void OnWeaponDrop(int client, int entity)
 {
 	OnWeaponDrop_ClearWeapon(entity);
@@ -535,7 +530,6 @@ static void HookClientEvents(int client)
 	DHookEntity(gH_DHooks_OnTeleport, true, client);
 	DHookEntity(gH_DHooks_SetModel, true, client);
 	SDKHook(client, SDKHook_SpawnPost, OnCSPlayerSpawnPost);
-	SDKHook(client, SDKHook_PreThinkPost, OnClientPreThinkPost);
 	SDKHook(client, SDKHook_WeaponDrop, OnWeaponDrop);
 }
 
