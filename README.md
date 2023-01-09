@@ -25,7 +25,7 @@ For more information about what each plugin does, please see [PLUGINS.md](PLUGIN
 
  * 128 Tick (`-tickrate 128`)
  * [SourceMod ^1.11](https://www.sourcemod.net/downloads.php?branch=stable)
- * [MovementAPI Plugin ^2.2.0](https://github.com/Ciallo-Ani/MovementAPI)
+ * [MovementAPI Plugin ^2.4.2](https://github.com/danzayau/MovementAPI)
  * [Rest In Pawn](https://github.com/ErikMinekus/sm-ripext)
  * Optional - [GlobalAPI Plugin](https://github.com/Ciallo-Ani/gokz-globalapi-sm1.11) (required for gokz-globals plugin)
  * Optional - A "console cleaner" extension to prevent `Datatable warning` server console spam
