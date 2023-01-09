@@ -224,8 +224,19 @@ public void RequestFrame_WeaponSound(DataPack dp)
 
 	UserMsg msg_id = dp.ReadCell();
 	int newTotal = dp.ReadCell();
-	int newClients[MAXPLAYERS];	
-	dp.ReadCellArray(newClients, newTotal);
+
+	int newClients[MAXPLAYERS];
+	if (newTotal != 0)
+	{
+		dp.ReadCellArray(newClients, newTotal);
+	}
+	else
+	{
+		// DataPack doesn't support CellArray or FloatArray with size 0
+		// You have to jump to the next postition
+		dp.Position++;
+	}
+
 	int flags = dp.ReadCell();
 
 	Protobuf newMsg = view_as<Protobuf>(StartMessageEx(msg_id, newClients, newTotal, flags));
