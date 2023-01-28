@@ -9,4 +9,4 @@
 
 
 
-#define GOKZ_VERSION "3.3.0"
+#define GOKZ_VERSION "3.5.4"
