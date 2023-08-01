@@ -8,6 +8,7 @@ void CreateNatives()
 {
 	CreateNative("GOKZ_RP_GetPlaybackInfo", Native_RP_GetPlaybackInfo);
 	CreateNative("GOKZ_RP_LoadJumpReplay", Native_RP_LoadJumpReplay);
+	CreateNative("GOKZ_RP_UpdateReplayControlMenu", Native_RP_UpdateReplayControlMenu);
 }
 
 public int Native_RP_GetPlaybackInfo(Handle plugin, int numParams)
@@ -30,6 +31,11 @@ public int Native_RP_LoadJumpReplay(Handle plugin, int numParams)
 	int botClient = LoadReplayBot(GetNativeCell(1), path);
 	return botClient;
 #endif
+}
+
+public int Native_RP_UpdateReplayControlMenu(Handle plugin, int numParams)
+{
+	return view_as<int>(UpdateReplayControlMenu(GetNativeCell(1)));
 }
 
 // =====[ FORWARDS ]=====
