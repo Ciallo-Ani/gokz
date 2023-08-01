@@ -44,7 +44,8 @@ char gC_CurrentMap[64];
 int gI_CurrentMapFileSize;
 bool gB_HideNameChange;
 bool gB_NubRecordMissed[MAXPLAYERS + 1];
-ArrayList g_ReplayInfoCache;
+ArrayList gA_ReplayInfoCache;
+ArrayList gA_PlaybackCache;
 Address gA_BotDuckAddr;
 int gI_BotDuckPatchRestore[40]; // Size of patched section in gamedata
 int gI_BotDuckPatchLength;
