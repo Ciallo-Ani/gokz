@@ -243,7 +243,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	{
 		return Plugin_Continue;
 	}
-	OnPlayerRunCmd_Playback(client, buttons, vel, angles);
+	OnPlayerRunCmd_Playback(client, buttons);
 	return Plugin_Changed;
 }
 
@@ -364,9 +364,18 @@ static void HookEvents()
 	delete gameData;
 }
 
-static void UpdateCurrentMap()
+static bool UpdateCurrentMap()
 {
-	GetCurrentMapDisplayName(gC_CurrentMap, sizeof(gC_CurrentMap));
+	char sMap[64];
+	GetCurrentMapDisplayName(sMap, sizeof(sMap));
+
+	// if current map equals to `gC_CurrentMap`, dont update
+	if (!strcmp(sMap, gC_CurrentMap))
+	{
+		return false;
+	}
+
+	strcopy(gC_CurrentMap, sizeof(gC_CurrentMap), sMap);
 	gI_CurrentMapFileSize = GetCurrentMapFileSize();
 
 	return true;
