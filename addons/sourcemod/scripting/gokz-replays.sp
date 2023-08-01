@@ -51,6 +51,7 @@ int gI_BotDuckPatchRestore[40]; // Size of patched section in gamedata
 int gI_BotDuckPatchLength;
 
 DynamicDetour gH_DHooks_TeamFull;
+DynamicDetour gH_MaintainBotQuota;
 
 #include "gokz-replays/commands.sp"
 #include "gokz-replays/nav.sp"
@@ -210,6 +211,12 @@ public MRESReturn DHooks_OnTeamFull_Pre(Address pThis, DHookReturn hReturn, DHoo
 	return MRES_Supercede;
 }
 
+// Stops bot_quota from doing anything.
+public MRESReturn Detour_MaintainBotQuota(int pThis)
+{
+	return MRES_Supercede;
+}
+
 // =====[ CLIENT EVENTS ]=====
 
 public void OnClientPutInServer(int client)
@@ -319,7 +326,7 @@ public void GOKZ_GL_OnNewTopTime(int client, int course, int mode, int timeType,
 static void HookEvents()
 {
 	HookUserMessage(GetUserMessageId("SayText2"), Hook_SayText2, true);
-	GameData gameData = LoadGameConfigFile("gokz-replays.games");
+	GameData gameData = new GameData("gokz-replays.games");
 
 	gH_DHooks_TeamFull = DynamicDetour.FromConf(gameData, "CCSGameRules::TeamFull");
 	if (gH_DHooks_TeamFull == INVALID_HANDLE)
@@ -331,6 +338,20 @@ static void HookEvents()
 	{
 		SetFailState("Failed to enable detour on CCSGameRules::TeamFull");
 	}
+
+
+	// BotManager::MaintainBotQuota
+	gH_MaintainBotQuota = DynamicDetour.FromConf(gameData, "BotManager::MaintainBotQuota");
+	if (gH_MaintainBotQuota == INVALID_HANDLE)
+	{
+		SetFailState("Failed to find CCSGameRules::TeamFull function signature");
+	}
+	
+	if (!gH_MaintainBotQuota.Enable(Hook_Pre, Detour_MaintainBotQuota))
+	{
+		SetFailState("Failed to enable detour on CCSGameRules::TeamFull");
+	}
+
 
 	// Remove bot auto duck behavior.
 	gA_BotDuckAddr = gameData.GetAddress("BotDuck");

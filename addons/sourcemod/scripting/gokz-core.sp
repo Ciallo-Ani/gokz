@@ -41,7 +41,6 @@ Handle gH_DHooks_OnTeleport;
 Handle gH_DHooks_SetModel;
 Handle gH_BotAddCommand = INVALID_HANDLE;
 Handle gH_SetMaxClients = INVALID_HANDLE;
-DynamicDetour gH_MaintainBotQuota = null;
 bool gB_Linux = false;
 int gI_WEAPONTYPE_UNKNOWN = 123123123;
 int gI_LatestClient = -1;
@@ -626,27 +625,7 @@ static void LoadDHooks()
 		SetFailState("Failed to get WEAPONTYPE_UNKNOWN");
 	}
 
-
-	// BotManager::MaintainBotQuota
-	if (!(gH_MaintainBotQuota = DHookCreateDetour(Address_Null, CallConv_THISCALL, ReturnType_Void, ThisPointer_Address)))
-	{
-		SetFailState("Failed to create detour for BotManager::MaintainBotQuota");
-	}
-
-	if (!DHookSetFromConf(gH_MaintainBotQuota, gamedata, SDKConf_Signature, "BotManager::MaintainBotQuota"))
-	{
-		SetFailState("Failed to get address for BotManager::MaintainBotQuota");
-	}
-
-	gH_MaintainBotQuota.Enable(Hook_Pre, Detour_MaintainBotQuota);
-
 	delete gamedata;
-}
-
-// Stops bot_quota from doing anything.
-static MRESReturn Detour_MaintainBotQuota(int pThis)
-{
-	return MRES_Supercede;
 }
 
 static bool SetMaxClients(int num)
