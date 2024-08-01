@@ -207,7 +207,6 @@ int MenuHandler_ReplayControls(Menu menu, MenuAction action, int param1, int par
 			delete menu;
 		}
 	}
-
 	return 0;
 }
 
